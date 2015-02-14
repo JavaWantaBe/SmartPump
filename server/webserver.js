@@ -34,7 +34,7 @@ function validateUser(username, password) {
 }
 
 function getSettings() {
-	// TODO: Retrieve actual network info
+	// TODO: Richard retrieve actual network info
 	return Q.resolve({
 		settings: {
 			ip: [192,168,1,1],
@@ -45,13 +45,14 @@ function getSettings() {
 }
 
 function setSettings(settings) {
+	// TODO: Richard set actual network settings
 	return Q.resolve(settings);
 }
 
 function getSchedule() {
 	return scheduler.getEntries().then(function(entries) {
 		return {
-			entries: _.pluck(_.invoke(entries, "getDBModel"), "time")
+			entries: entries
 		};
 	});
 }
