@@ -1,0 +1,88 @@
+/* Copyright (c) 2013-2014 Unixmedia S.r.l. <info@unixmedia.it>
+ * Copyright (c) 2013-2014 Franco (nextime) Lanza <franco@unixmedia.it>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 3 as
+ * published by the Free Software Foundation.
+ *
+ * compiling with /usr/local/bin/dtc -O dtb -o OSSO_BASE-00A0.dtbo -b 0 -@ OSSO_BASE-00A0.dts
+ */
+/dts-v1/;
+/plugin/;
+
+/ {
+
+   /* Identification */
+   compatible = "ti,beaglebone", "ti,beaglebone-black";
+   part-number = "OSSO_BASE";
+   board-name = "Osso";
+   manufacturer = "Unixmedia";
+   version = "00A0";
+
+   /* BB Black uses (so, we cannot):
+    * P8 3-6, 20-25, 27-46 
+    * P9 28,29,31
+    */
+
+   /* pins needed by the cape */
+   exclusive-use = 
+      "P8.12",   /* Digital input 4 */    
+      "P8.14",   /* Digital input 3 */
+      "P8.11",   /* Digital input 2 */
+      "P8.15",   /* Digital input 1 */
+      "P8.16",   /* Digital input 5 */
+      "P8.17",   /* Digital input 6 */
+      "P8.18",   /* Digital input 7 */
+      "P8.26",   /* Digital input 8 */
+      "P9.12",   /* Relay 1 */
+      "P8.7",    /* Relay 7 */
+      "P9.15",   /* Relay 2 */
+      "P9.23",   /* Relay 3 */
+      "P8.9",    /* Relay 4 */
+      "P9.27",   /* Relay 5 */
+      "P9.41",   /* Relay 6 */
+      "P9.42";   /* Relay 8 */
+
+   /*  References:
+	https://github.com/derekmolloy/boneDeviceTree/blob/master/docs/BeagleboneBlackP8HeaderTable.pdf
+	https://github.com/derekmolloy/boneDeviceTree/blob/master/docs/BeagleboneBlackP9HeaderTable.pdf 
+   */    
+   fragment@0 {
+      target = <&am33xx_pinmux>;
+      __overlay__ {
+         osso_base_pins: pinmux_osso_base_pins {
+            pinctrl-single,pins = <
+               0x030 0x37 /* INPUT MODE7 pullup */
+               0x028 0x37 /* INPUT MODE7 pullup */
+               0x034 0x37 /* INPUT MODE7 pullup */
+               0x03c 0x37 /* INPUT MODE7 pullup */
+               0x038 0x37 /* INPUT MODE7 pullup */
+               0x02c 0x37 /* INPUT MODE7 pullup */
+               0x08c 0x37 /* INPUT MODE7 pullup */
+               0x07c 0x37 /* INPUT MODE7 pullup */
+               0x078 0x07 /* OUTPUT MODE7, pulldown */
+               0x090 0x07 /* OUTPUT MODE7, pulldown */
+               0x040 0x07 /* OUTPUT MODE7, pulldown */
+               0x044 0x07 /* OUTPUT MODE7, pulldown */
+               0x09c 0x07 /* OUTPUT MODE7, pulldown */
+               0x1a4 0x07 /* OUTPUT MODE7, pulldown */
+               0x1b4 0x07 /* OUTPUT MODE7, pulldown */
+               0x164 0x07 /* OUTPUT MODE7, pulldown */
+               >;
+         };
+      };
+   };
+
+   fragment@1 {
+      target = <&ocp>;
+      __overlay__ {
+         test_helper: helper {
+            compatible = "bone-pinmux-helper";
+            pinctrl-names = "default";
+            pinctrl-0 = <&osso_base_pins>;
+            status = "okay";
+         };
+      };
+   };
+};
+

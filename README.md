@@ -38,19 +38,7 @@ To start developing:
 	        
 	        create a new user:
 	            CREATE USER 'smartpump'@'localhost' IDENTIFIED BY 'foobar123';
-	            GRANT SELECT, DELETE, UPDATE, INSERT, EXECUTE ON smartpump.* TO 'smartpump'@'localhost';
-	            
-	     NOTE: There is an error on the mysql-server install package that is installed on the beaglebone board.
-        	    That flaw is that time zone information is failed to be entered into the server.  You will need to run this
-        	    command on the command line to make all the time sensitive functions work:
-        	    
-        	    mysql_tzinfo_to_sql /usr/share/zoneinfo | mysql -u root -p mysql
-        	    
-        	    service mysql restart
-        	    
-        	    Another issue is that if you are going to be doing any remote development / admin on the mysql database, then
-        	    you will need to modify the /etc/mysql/my.cnf file to include the bind-address = 0.0.0.0.  The default is to 
-        	    have this line commented out.
+	            GRANT SELECT, DELETE, UPDATE, INSERT ON 'smartpump.*' TO 'smartpump'@'localhost';
 	    
 	    Install cape devicetree -
 	        in the cape_devicetree directory :

@@ -1,0 +1,3 @@
+#!/bin/bash
+sudo killall node # close any other node instances
+node index.js     # start server

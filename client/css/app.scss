@@ -1,0 +1,23 @@
+@import 'lib/reset';
+@import 'lib/pickadate';
+@import 'lib/pickadate.date';
+@import 'lib/pickadate.time';
+
+@import 'header';
+@import 'navigation';
+@import 'footer';
+
+@import 'dashboard';
+@import 'schedule';
+@import 'settings';
+@import 'logs';
+
+.app {
+	position: absolute;
+	top: 0px;
+	left: 50%;
+	margin-left: -475px;
+	font: 75%/1.5em Georgia, "Times New Roman", Times, serif;
+	width: 950px;
+	padding: 0 10px 0 10px;
+}

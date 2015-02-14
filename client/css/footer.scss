@@ -1,0 +1,32 @@
+.footer {
+	position: relative;
+	float: left;
+	width: 100%;
+	border-top: 1px solid #d0d0d0;
+	font-size: 0.9em;
+	padding-top: 10px;
+
+	.copyright {
+		float: left;
+		color: #666;
+	}
+
+	.footer-nav {
+		list-style: none;
+		float: right;
+		width: 300px;
+		text-align: right;
+
+		.footer-nav-item {
+			text-decoration: none;
+			color: #555;
+			display: inline;
+			float: right;
+			margin-left: 1em;
+		}
+
+		.footer-nav-item.active {
+			color: #000;
+		}
+	}
+}
