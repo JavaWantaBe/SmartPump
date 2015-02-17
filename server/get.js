@@ -11,9 +11,9 @@
  */
 
 
-var http 	= require("http"),
-	https 	= require("https"),
-	Q 		= require("q");
+var http    = require("http"),
+    https   = require("https"),
+    Q       = require("q");
 
 /**
  * @brief Exported Functions
@@ -27,24 +27,24 @@ var http 	= require("http"),
  * @returns {deferred.promise|*}
  */
 module.exports = function(options) {
-	var deferred = Q.defer();
+    var deferred = Q.defer();
 
-	options = options || {};
+    options = options || {};
 
-  	var prot = options.port == 443 ? https : http,
-    	req = prot.request(options, function(res) {
-	        var output = "";
-	        res.setEncoding("utf8");
+    var prot = options.port == 443 ? https : http,
+        req = prot.request(options, function(res) {
+            var output = "";
+            res.setEncoding("utf8");
 
-	        res.on("data", function (chunk) {
-	            output += chunk;
-	            deferred.notify(chunk);
-	        });
+            res.on("data", function (chunk) {
+                output += chunk;
+                deferred.notify(chunk);
+            });
 
-	        res.on("end", function(data) {
-	            deferred.resolve(output, res.statusCode);
-	        });
-    	});
+            res.on("end", function(data) {
+                deferred.resolve(output, res.statusCode);
+            });
+        });
 
     req.on("error", function(err) {
         deferred.reject(err);

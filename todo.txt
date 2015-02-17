@@ -2,17 +2,17 @@ Jimmy
 
 Change settings read-only to DHCP mode
 Add inputs for changing pump cycle timeouts:
-	primeTimeOut,
-	outletTimeout,
-	pumpingTimeOut,
-	generalTimeOut
+    primeTimeOut,
+    outletTimeout,
+    pumpingTimeOut,
+    generalTimeOut
 Manual overwrite for pumping schedules
 Add "Run Cycle" button on schedule page that is displayed only when in manual mode
 Add radio buttons to log page: All, Info, Warning, Error
 
 Richard
 
-	Add graphing for dashboard on front end.
-	Add network settings retrieving and setting.
-	RTC background buttoned up
-	Change log info column to enumerated type
+    Add graphing for dashboard on front end.
+    Add network settings retrieving and setting.
+    RTC background buttoned up
+    Change log info column to enumerated type

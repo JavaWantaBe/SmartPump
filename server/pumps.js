@@ -13,7 +13,7 @@ var Q        = require( 'q' ),
     b        = require( 'bonescript' ),
     _        = require( 'lodash' ),
     db       = require( './database' ),
-    logger	 = require( './logger' )( 'pumps' ),
+    logger   = require( './logger' )( 'pumps' ),
     settings = require( './config/pinconfig'), // Use this instead of fs for JSON objects
     timeOuts = require( './config/pumpsettings' );
 
@@ -220,7 +220,7 @@ function startcycle(){
  *
  */
 module.exports = {
-	init:function(){
+    init:function(){
             var errorFlag = false;
             stop = false;
 
@@ -246,5 +246,5 @@ module.exports = {
                 throw new Error( "Pin assignment failed" );
             }
         },
-	start: startcycle
+    start: startcycle
 };

@@ -4,8 +4,8 @@
  * @file
  * @brief Performs all Datalogging
  *
- *	Provides module and global level logging to console and/or file
- *	Database logging can additionally be added later.
+ *  Provides module and global level logging to console and/or file
+ *  Database logging can additionally be added later.
  *
  *  Uses as a transport layer - MySQL
  *  Installed with npm install winston-mysql-transport --save
@@ -17,19 +17,19 @@
  *      Saving of metadata
  *
  *
- *	Exports:
- *		loggerFactory(name:String) -> Logger
- *			Takes a name for the logger to create.
- *			Returned logger contains 3 methods for different kinds of logging:
- *				info  - Basic runtime information
- *				warn  - Non-fatal issues
- *				error - Fatal issues
- *			    debug - Debugging information only destined for the console
+ *  Exports:
+ *      loggerFactory(name:String) -> Logger
+ *          Takes a name for the logger to create.
+ *          Returned logger contains 3 methods for different kinds of logging:
+ *              info  - Basic runtime information
+ *              warn  - Non-fatal issues
+ *              error - Fatal issues
+ *              debug - Debugging information only destined for the console
  *
- *		First you must generate your log table
- *	    file : extras/schema.sql
- *	    CREATE TABLE IF NOT EXISTS `my_database`.`log_table` (
- *	    `id` int(10) NOT NULL AUTO_INCREMENT,
+ *      First you must generate your log table
+ *      file : extras/schema.sql
+ *      CREATE TABLE IF NOT EXISTS `my_database`.`log_table` (
+ *      `id` int(10) NOT NULL AUTO_INCREMENT,
  *      'level` varchar(45) NOT NULL,
  *      `message` text NOT NULL,
  *      `timestamp` datetime NOT NULL,
@@ -38,13 +38,13 @@
  *      PRIMARY KEY (`id`)
  *      );
  *
- *			The logger also contains methods for retrieving other loggers/logs:
- *				getLogger(name:String) -> Logger
- *				getLog(name:String, query:Object) -> Array
+ *          The logger also contains methods for retrieving other loggers/logs:
+ *              getLogger(name:String) -> Logger
+ *              getLog(name:String, query:Object) -> Array
  *
- *		For more information, see the Winston docs: https://github.com/flatiron/winston#usage
- *	    AND
- *	    https://github.com/nvdnkpr/winston-mysql-transport
+ *      For more information, see the Winston docs: https://github.com/flatiron/winston#usage
+ *      AND
+ *      https://github.com/nvdnkpr/winston-mysql-transport
  */
 
 /**
