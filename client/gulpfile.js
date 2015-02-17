@@ -1,99 +1,68 @@
-"use strict"
+"use strict";
 
-var gulp 			= require("gulp"),
-	mocha			= require("gulp-mocha"),
-	runSequence 	= require("run-sequence"), // helps run tasks in order
-	plumber			= require("gulp-plumber"), // keeps thrown errors from killing a task
-	concat 			= require("gulp-concat"),
-	uglify 			= require("gulp-uglify"),
-	jshint			= require("gulp-jshint"),
-	stylish 		= require("jshint-stylish"),
-	sass 			= require("gulp-ruby-sass"),
-	clean 			= require("gulp-clean"),
-	browserify 		= require("gulp-browserify"),
-	dest			= gulp.dest.bind(gulp),
-	S 				= require("string"),
-	_ 				= require("lodash");
+var gulp        = require("gulp"),                // Task runner
+    gutil       = require("gulp-util"),
+    Q           = require("q"),
+    _           = require("lodash"),
+    plumber     = require("gulp-plumber"),        // Handles gulp errors without stopping the watch task
+    source      = require("vinyl-source-stream"), // Allows the use of text streams with gulp (needed for browserify)
+    port        = 8888;                           // For test server
 
-var debug = true;
+var bundler = _.once(function() {
+    var Browserify = require("browserify"),
+        watchify   = require("watchify");
 
-var files = {
-	jsEntry:   "js/app.js",    // Entry point for browserify
-	scssEntry: "css/app.scss", // Entry point for sass
-	html:      "index.html",
-	js:        ["js/**/*.js", "js/**/*.json"],
-	scss:      "css/**/*.scss",
-	assets:    "assets/**/*",
-	toClean:   "../server/public",
-	tests:     "./test/**/*.js"
-};
-
-var outFiles = {
-	js:        "../server/public/assets",
-	css:       "../server/public/assets",
-	html:      "../server/public",
-	assets:    "../server/public/assets"
-};
-
-gulp.task("js", ["lint"], function() {
-	var stream = gulp.src(files.jsEntry)
-		.pipe(plumber())
-		.pipe(browserify());
-	
-	if(!debug) {
-		stream = stream.pipe(uglify());
-	}
-
-	return stream.pipe(dest(outFiles.js));
+    return watchify(Browserify(_.extend({
+        paths: ["./node_modules", "./javascript"],
+        debug: true
+    }, watchify.args)))
+    .transform(require("6to5ify"))
+    .transform('brfs')
+    .add("./javascript/app.js")
+    .on('update', bundle)
+    .on("time", function(time) {
+        gutil.log("Finished building (" + time + " ms)");
+    });
 });
 
-gulp.task("lint", function() {
-	return gulp.src("js/**/*.js")
-		.pipe(jshint())
-		.pipe(jshint.reporter(stylish));
+function bundle() {
+    return bundler()
+        .bundle()
+        .pipe(source("app.js"))
+        .pipe(gulp.dest("../server/public"));
+}
+
+// Compile javascript and jsx files
+gulp.task("javascript", bundle);
+
+// Compile scss files
+gulp.task("styles", function() {
+    var sass = require("gulp-ruby-sass");
+    return gulp.src("styles/styles.scss")
+        .pipe(plumber())
+        .pipe(sass({style: "compressed", require: ["susy"]}))
+        .pipe(gulp.dest("../server/public"));
 });
 
+// Copy source html file
 gulp.task("html", function() {
-	return gulp.src(files.html)
-		.pipe(dest(outFiles.html))
+    return gulp.src("index.html")
+        .pipe(gulp.dest("../server/public"));
 });
 
-gulp.task("scss", function() {
-	return gulp.src(files.scssEntry)
-		.pipe(plumber())
-		.pipe(sass())
-		.pipe(dest(outFiles.css));
+// Copy static assets
+gulp.task("statics", function() {
+    return gulp.src("statics/**/*")
+        .pipe(gulp.dest("../server/public"));
 });
 
-gulp.task("assets", function() {
-	return gulp.src(files.assets)
-		.pipe(dest(outFiles.assets));
+// Build web version
+gulp.task("build", ["javascript", "styles", "html", "statics"]);
+
+// Watch source files for changes. Rebuild necessary files when changes are made
+gulp.task("watch", ["build"], function() {
+    gulp.watch("styles/**/*.scss", ["styles"]);
+    gulp.watch("index.html", ["html"]);
 });
 
-gulp.task("clean", function() {
-	return gulp.src(files.toClean, {read: false})
-		.pipe(clean({force: true}));
-});
-
-gulp.task("watch", function() {
-	gulp.watch(files.html, ["html"]);
-	gulp.watch(files.js, ["js"]);
-	gulp.watch(files.scss, ["scss"]);
-	gulp.watch(files.templates, ["templates"]);
-	
-});
-
-gulp.task("test", function() {
-	return gulp.src(files.tests)
-		.pipe(plumber())
-		.pipe(mocha());
-});
-
-gulp.task("build", ["js", "scss", "html", "assets"]);
-
-gulp.task("default", function(callback) {
-	runSequence("clean", 
-				"build",
-				"watch",
-				callback);
-});
+gulp.task("default", ["watch"]);

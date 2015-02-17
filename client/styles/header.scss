@@ -1,0 +1,54 @@
+.header {
+    position: relative;
+    width: 100%;
+    height: 121px;
+    border-top: 15px solid #222;
+    float: left;
+
+    .logo-container {
+        position: relative;
+        float: left;
+        height: 55px;
+        font-size: 1.4em;
+        line-height: 2em;
+        text-transform: capitalize;
+        text-align: left;
+        margin-top: 25px;
+        border: none;
+
+        .logo {
+            position: relative;
+            float: left;
+            width: 90px;
+            height: 55px;
+            background: url(logo.png) no-repeat;
+            background-size: 90px 55px;
+            cursor: pointer;
+            display: block;
+        }
+
+        .logo-link {
+            position: absolute;
+            text-decoration: none;
+            color: #555;
+            left: 90px;
+            bottom: -12px;
+            padding: 0;
+        }
+
+        .logo-link:hover {
+            text-decoration: underline;
+        }
+    }
+
+    .slogan {
+        position: absolute;
+        right: 0;
+        bottom: 30px;
+        color: #333;
+        font-size: 1.8em;
+        padding-bottom: 15px;
+        width: 560px;
+        border-bottom: 4px double #d0d0d0;
+    }
+}
