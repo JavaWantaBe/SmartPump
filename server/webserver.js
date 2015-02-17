@@ -79,7 +79,11 @@ app.use(bodyParser());
 app.use(cookieParser());
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(flash());
-app.use(session({secret: "this is my really creative secret"}));
+app.use(session({
+	secret: "this is my really creative secret",
+	resave: false,
+	saveUninitialized: false
+}));
 app.use(passport.initialize());
 app.use(passport.session());
 app.use(express.static(staticFiles));

@@ -1,20 +1,20 @@
 "use strict";
 
 /*
-	This module's purpose is to manage the tide entries and leverage the tide-retriever for keeping tide entries up-to-date
+    This module's purpose is to manage the tide entries and leverage the tide-retriever for keeping tide entries up-to-date
 */
 
-var logger			= require("./logger")("pump-scheduler"),
-	tideRetriever 	= require("./tide-retriever"),
-	_				= require("lodash"),
-	moment 			= require("moment"),
-	Q		 		= require("q"),
-	db				= require("./database"),
+var logger          = require("./logger")("pump-scheduler"),
+    tideRetriever   = require("./tide-retriever"),
+    _               = require("lodash"),
+    moment          = require("moment"),
+    Q               = require("q"),
+    db              = require("./database"),
     schedule        = require( 'node-schedule' ), // https://www.npmjs.org/package/node-schedule
-	pump            = require( './pumps' ),
+    pump            = require( './pumps' ),
     b               = require( 'bonescript'),
-    entries 		= [],
-    scheduledTask = schedule.scheduleJob( null, null );
+    entries         = [],
+    scheduledTask   = null;
 
 /**
  * @brief Sets the alarm time for when the next cycle will start.
@@ -27,7 +27,7 @@ var logger			= require("./logger")("pump-scheduler"),
 function setNextAlarm() {
     // TODO: Alarm needs to be in local time
 
-	var QUERY = "SELECT CONVERT_TZ( getNextTide(), 'GMT', @@global.time_zone ) AS TIDE",
+    var QUERY = "SELECT CONVERT_TZ( getNextTide(), 'GMT', @@global.time_zone ) AS TIDE",
         deffered = Q.defer();
 
     db.query( QUERY ).then( function( result ){
@@ -186,12 +186,14 @@ function setEntries( _entries ){
  *
  */
 function cancelNextCycle(){
-    scheduledTask.cancelJob();
+    if(scheduledTask) {
+        scheduledTask.cancelJob();
+    }
 }
 
 module.exports = {
     init: init,
-	getEntries: getEntries,
-	setEntries: setEntries,
+    getEntries: getEntries,
+    setEntries: setEntries,
     cancelNextCycle: cancelNextCycle
 };
