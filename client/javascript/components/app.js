@@ -7,10 +7,10 @@ var React        = require("react"),
 var App = React.createClass({
     render: function() {
         return (
-            <div className='app yui3-cssreset'>
+            <div className="app yui3-cssreset">
                 <Header/>
                 <Navigation/>
-                <div class='content'>
+                <div className="content">
                     <RouteHandler />
                 </div>
                 <Footer/>

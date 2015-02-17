@@ -1,12 +1,16 @@
 .logs table {
-	border-spacing: 16px;
+    border-spacing: 16px;
+    max-height: 600px;
+    overflow: auto;
+    display: block;
+    border: 1px solid #d0d0d0;
 }
 
 .logs td, .logs th {
-	padding: 4px 8px 4px 8px;
+    padding: 4px 8px 4px 8px;
 }
 
 .logs th {
-	font-weight: bold;
-	color: #333;
+    font-weight: bold;
+    color: #333;
 }

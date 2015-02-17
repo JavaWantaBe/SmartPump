@@ -2,6 +2,7 @@
 
 var _             = require("lodash"),
     Q             = require("q"),
+    logger        = require("./logger")("webserver"),
     express       = require("express"),
     bodyParser    = require("body-parser"),
     cookieParser  = require("cookie-parser"),
@@ -22,10 +23,7 @@ function checkAuthenticated(req, res, next) {
     if(req.isAuthenticated()) {
         return next();
     }
-    res.status(401);
-    res.json({
-        autherror: true
-    });
+    res.status(401).end();
 }
 
 function validateUser(username, password) {
@@ -34,32 +32,49 @@ function validateUser(username, password) {
     });
 }
 
+// TODO: Remove placeholder data
+var settingsData = { // Placeholder data
+    settings: {
+        dynamic: true,
+        ip: [192,168,1,1],
+        subnet: [255,255,255,0],
+        gateway: [192,168,1,5],
+
+        primeTimeOut: 10000,
+        outletTimeout: 20000,
+        pumpingTimeOut: 30000,
+        generalTimeOut: 40000
+    }
+};
 function getSettings() {
     // TODO: Richard retrieve actual network info
-    return Q.resolve({
-        settings: {
-            ip: [192,168,1,1],
-            subnet: [255,255,255,0],
-            gateway: [192,168,1,1]
-        }
-    });
+    return Q.resolve(settingsData);
 }
 
 function setSettings(settings) {
     // TODO: Richard set actual network settings
-    return Q.resolve(settings);
+    settingsData = {
+        settings: settings
+    };
+    return Q.resolve(settingsData);
 }
 
+// TODO: Move this variable somewhere more fittings
+var manualMode = false;
 function getSchedule() {
     return scheduler.getEntries().then(function(entries) {
         return {
-            entries: entries
+            schedule: {
+                entries: entries,
+                manualMode: manualMode
+            }
         };
     });
 }
 
-function setSchedule(entries) {
-    return scheduler.setEntries(entries.map(function(time) {
+function setSchedule(schedule) {
+    manualMode = schedule.manualMode;
+    return scheduler.setEntries(schedule.entries.map(function(time) {
         return TideEntry.fromDBModel({
             time: time
         });
@@ -106,16 +121,21 @@ app.route("/settings")
 // Schedule
 app.route("/schedule")
     .get(checkAuthenticated, function(req, res) {
-        getSchedule().then(function(schedule) {
-            res.json(schedule);
-        });
+        getSchedule().then(res.json.bind(res));
     })
     .post(checkAuthenticated, function(req, res) {
-        if(req.body && req.body.entries) {
-            setSchedule(req.body.entries)
+        if(req.body && req.body.schedule && req.body.schedule.entries) {
+            setSchedule(req.body.schedule)
                 .then(getSchedule)
                 .then(res.json.bind(res));
         }
+    });
+
+app.route("/start-pumps") // used to manually start the pumps
+    .get(checkAuthenticated, function(req, res) {
+        // TODO: Add code for actually starting the pumps
+        logger.info("Manually starting the pumps from web interface");
+        res.status(200).end();
     });
 
 // Logs
@@ -129,7 +149,7 @@ app.route("/logs")
 app.route("/login")
     .post(passport.authenticate("local-login"), 
     function(req, res) {
-        res.json("success");
+        res.status(200).end(); // success
     });
 
 passport.serializeUser(function(user, done) {
@@ -164,6 +184,5 @@ passport.use("local-login", strategy);
 module.exports = {
     init: function() {
         app.listen(port);
-        console.log("Listening on port " + port);
     }
 };

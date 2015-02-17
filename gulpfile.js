@@ -84,7 +84,7 @@ gulp.task("build", ["javascript", "styles", "html", "statics"]);
 gulp.task("watch", ["build", "server"], function() {
     gulp.watch("client/styles/**/*.scss", ["styles"]);
     gulp.watch("client/index.html", ["html"]);
-    gulp.watch("server/**/*", ["server"]);
+    gulp.watch(["server/**/*", "!server/public", "!server/public/**/*"], ["server"]);
 });
 
 gulp.task("default", ["watch"]);

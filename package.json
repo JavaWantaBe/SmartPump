@@ -29,10 +29,11 @@
     "passport": "^0.2.1",
     "passport-local": "^1.0.0",
     "q": "~1.0.1",
-    "qwest": "^1.5.4",
     "react": "^0.12.2",
     "react-router": "^0.12.0",
+    "request": "^2.53.0",
     "session": "^0.1.0",
+    "superagent": "^0.21.0",
     "winston": "~0.7.3",
     "winston-mysql-transport": "~0.1.2"
   }
