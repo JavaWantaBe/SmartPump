@@ -33,7 +33,21 @@ function bundle() {
 }
 
 // Compile javascript and jsx files
-gulp.task("javascript", bundle);
+gulp.task("javascript", function() {
+    var Browserify = require("browserify");
+
+    return Browserify({
+        paths: ["./node_modules", "./client/javascript"],
+        debug: true
+    })
+    .transform(require("6to5ify"))
+    .transform('brfs')
+    .add("./client/javascript/app.js")
+    .on('update', bundle)
+    .on("time", function(time) {
+        gutil.log("Finished building (" + time + " ms)");
+    });
+});
 
 // Compile scss files
 gulp.task("styles", function() {

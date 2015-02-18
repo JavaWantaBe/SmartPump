@@ -1,13 +1,16 @@
-all: local_modules build
+all: local_modules setup_database build
 
-global_modules:
-    sudo npm install -g gulp
-    sudo npm install -g mocha
-    sudo npm install -g bower
+global_modules: 
+	sudo npm install -g gulp
+	sudo npm install -g mocha
 
 local_modules: global_modules
-    npm install
+	npm install
+
+setup_database:
+	sudo apt-get install mysql-server
+	node setup-database.js
 
 build:
-    gulp build
+	gulp build
 
