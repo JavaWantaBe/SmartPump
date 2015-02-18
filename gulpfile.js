@@ -33,19 +33,25 @@ function bundle() {
 }
 
 // Compile javascript and jsx files
-// gulp.task("javascript", function() {
-//     var Browserify = require("browserify");
+// Same as bundler, but it doesn't 
+// keep the process from ending due
+// to watchify
+gulp.task("javascript", function() {
+    var Browserify = require("browserify");
 
-//     return Browserify({
-//         paths: ["./node_modules", "./client/javascript"],
-//         debug: true
-//     })
-//     .transform(require("6to5ify"))
-//     .transform('brfs')
-//     .add("./client/javascript/app.js");
-// });
+    return Browserify({
+        paths: ["./node_modules", "./client/javascript"],
+        debug: true
+    })
+    .transform(require("6to5ify"))
+    .transform('brfs')
+    .add("./client/javascript/app.js")
+    .bundle()
+    .pipe(source("app.js"))
+    .pipe(gulp.dest("server/public"));
+});
 
-gulp.task("javascript", bundle);
+//gulp.task("javascript", bundle);
 
 // Compile scss files
 gulp.task("styles", function() {
