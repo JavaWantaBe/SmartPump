@@ -17,6 +17,13 @@ var filters = {
     }
 };
 
+function reverse(arr) {
+    return arr.reduceRight(function(result, value) {
+        result.push(value);
+        return result;
+    }, []);
+}
+
 var Logs = React.createClass({
     mixins: [
         require("react-router").Navigation,
@@ -55,7 +62,7 @@ var Logs = React.createClass({
                 this.state.logs.filter(filter) : 
                 this.state.logs;
 
-        return logs.map((entry) => (
+        return reverse(logs).map((entry) => (
             <tr key={entry.key}>
                 <td>{entry.level}</td>
                 <td>{entry.message}</td>
@@ -72,6 +79,7 @@ var Logs = React.createClass({
                 {this.renderFilterRadio("Info",    filters.info)}
                 {this.renderFilterRadio("Warning", filters.warning)}
                 {this.renderFilterRadio("Error",   filters.error)}
+                <button onClick={this.load}>Fetch</button>
                 <table>
                     <thead>
                         <tr>

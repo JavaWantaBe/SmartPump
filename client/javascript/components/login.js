@@ -1,5 +1,6 @@
 var React   = require("react"),
-    request = require("superagent");
+    request = require("superagent"),
+    stores  = require("stores");
 
 var Login = React.createClass({
     mixins: [require("react-router").Navigation],
@@ -12,6 +13,16 @@ var Login = React.createClass({
         };
     },
 
+    preloadData: function() {
+        stores.forEach((store) => {
+            request.get(store.path, (response) => {
+                if(response.status === 200) {
+                    store.setData(JSON.parse(response.text));
+                }
+            });
+        });
+    },
+
     submit: function(event) {
         event.preventDefault();
         request.post("/login", {
@@ -19,6 +30,7 @@ var Login = React.createClass({
             password: this.state.password
         }, (res) => {
             if(res.status === 200) { // Success
+                this.preloadData();
                 this.transitionTo("dashboard");
             }
             else {

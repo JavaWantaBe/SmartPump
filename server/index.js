@@ -37,7 +37,6 @@ db.connect().then(
     function() {
         logger.info( "Successfully connected to mysql database" );
 
-
         if( onBoard ){
             logger.debug("Found beaglebone");
             
@@ -56,7 +55,11 @@ db.connect().then(
         logger.error("Fatal - " + err );
         return Q.reject();
     }
-).then( function( result ){
+)
+.then( function() {
+    require("./test-user"); // TODO: Remove test user before we install
+})
+.then( function(){
     return webserver.init();
 }, function( err ){
     logger.debug( "Error: " + err );
