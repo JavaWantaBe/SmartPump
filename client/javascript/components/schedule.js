@@ -64,7 +64,10 @@ var Schedule = React.createClass({
                     onChange={this.toggleManualMode}/>
                 <label>Manual Mode</label>
                 {manualMode ? 
-                    [<br/>, <button onClick={this.startPumps}>Start Pumping Cycle</button>] :
+                    <div>
+                        <br/>
+                        <button onClick={this.startPumps}>Start Pumping Cycle</button>
+                    </div> :
                     null
                 }
                 <div className="schedule__entries">

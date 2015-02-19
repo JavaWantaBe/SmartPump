@@ -1,6 +1,10 @@
 var React   = require("react"),
     request = require("superagent"),
-    stores  = require("stores");
+    stores  = [
+        require("stores/log-store"),
+        require("stores/schedule-store"),
+        require("stores/settings-store")
+    ];
 
 var Login = React.createClass({
     mixins: [require("react-router").Navigation],
@@ -18,6 +22,9 @@ var Login = React.createClass({
             request.get(store.path, (response) => {
                 if(response.status === 200) {
                     store.setData(JSON.parse(response.text));
+                }
+                else {
+                    console.error("Failed to fetch data from " + store.path);
                 }
             });
         });

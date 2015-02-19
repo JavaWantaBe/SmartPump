@@ -46,6 +46,7 @@ var settingsData = { // Placeholder data
         generalTimeOut: 40000
     }
 };
+
 function getSettings() {
     // TODO: Richard retrieve actual network info
     return Q.resolve(settingsData);
