@@ -151,7 +151,8 @@ function runPrimeCycle(startOutput, endInput) {
   logger.info("Running prime cycle");
   return pinCycle(
     startOutput, endInput,
-    configManager.getConfig().pumpTimeouts.primeTimeOut
+    configManager.getConfig().pumpTimeouts.primeTimeOut,
+    true
   )
   .then(log("Prime cycle finished"))
   .catch(logError("Prime cycle failed"));
@@ -223,6 +224,7 @@ function runPumpCycle(pump, inputPins, outputPins) {
     .then(monitorFlow.bind(null, pump, inputPins.tankIsFull, inputPins.pressure))
     .then(function() {
       return pump.stop()
+      .then(outputPins.startPrime.turnOff.bind(outputPins.startPrime))
       .then(log("Pump stopped successfully"))
       .catch(logError("Failed to stop pump"));
     });

@@ -1,4 +1,3 @@
-var Q = require("q");
 var db = require("../database");
 var PUMP1 = 0;
 var PUMP2 = 1;

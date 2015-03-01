@@ -24,12 +24,14 @@ var Q = require("q");
     turns off the output pin
     stops listening to the input pin
 */
-function pinCycle(startOutput, endInput, timeoutMS) {
+function pinCycle(startOutput, endInput, timeoutMS, stayOn) {
   var timeout;
 
   function cleanup() {
     clearTimeout(timeout); // this is a no-op if the timeout is cleared or doesn't exist
-    startOutput.turnOff(); // stop outputting start signal
+    if(!stayOn) {
+      startOutput.turnOff(); // stop outputting start signal
+    }
     endInput.detach(); // stop listening for end signal
   }
 
@@ -37,6 +39,7 @@ function pinCycle(startOutput, endInput, timeoutMS) {
     // start timeout
     if(timeoutMS) {
       timeout = setTimeout(function() {
+        startOutput.turnOff();
         cleanup();
         reject(new Error("Timeout reached"));
       }, timeoutMS);
