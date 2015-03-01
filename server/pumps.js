@@ -218,7 +218,7 @@ function runPumpCycle(pump, inputPins, outputPins) {
     })
     .then(function() {
       console.log("Waiting to monitor flow");
-      return wait(1000);
+      return wait(30 * 1000); // wait 30 seconds
     })
     .then(monitorFlow.bind(null, pump, inputPins.tankIsFull, inputPins.pressure))
     .then(function() {
@@ -257,7 +257,7 @@ function startCycle(currentPumpId) {
       return resultObject;
     })
     .finally(function() {
-      return wait(5000)
+      return wait(1000 * 60 * 5) // wait 5 minutes
         .then(cleanUp.bind(null, outputPins));
     });
 }
