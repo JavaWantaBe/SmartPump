@@ -23,6 +23,10 @@ _.extend(InputPin.prototype, {
   read: function() {
     return device.digitalRead(this.pin);
   },
+  
+  isOn: function() {
+    return !!this.handler({value: this.read()});
+  },
 
   /*
     Attaches an interrupt to this pin
@@ -32,21 +36,20 @@ _.extend(InputPin.prototype, {
     Returns: null
   */
   attach: function(callback) {
-    if(this.handler({value: this.read()})) {
-      callback();
+    if(this.isOn()) {
+      setTimeout(callback, 0);
       return;
     }
+    console.log("Attaching " + this.pin);
     if(this._isAttached) {
       console.log("Warning: attaching an interrupt to a pin that already has an interrupt attached: " + this.pin);
     }
+    this._isAttached = true;
     attachInterrupt(this.pin, this.handler, this.mode, function() {
-      if(this._isAttached) {
+      if(this.isOn()) {
         callback();
-      } else {
-        console.log("interrupt callback fired while interrupt wasn't attached");
       }
     }.bind(this));
-    this._isAttached = true;
   },
 
   /*
@@ -57,6 +60,7 @@ _.extend(InputPin.prototype, {
   */
   detach: function() {
     if(this._isAttached) {
+      console.log("Detaching " + this.pin);
       detachInterrupt(this.pin);
       this._isAttached = false;
     }

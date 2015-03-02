@@ -35,18 +35,22 @@ function pinCycle(startOutput, endInput, timeoutMS) {
 
   return Q.Promise(function(resolve, reject) {
     // start timeout
-    timeout = setTimeout(function() {
-      reject(new Error("Timeout reached"));
-    }, timeoutMS);
+    if(timeoutMS) {
+      timeout = setTimeout(function() {
+        cleanup();
+        reject(new Error("Timeout reached"));
+      }, timeoutMS);
+    }
 
     // begin listening for end signal
     endInput.once(function() {
+      cleanup();
       resolve();
     });
 
     // output start signal
     startOutput.turnOn();
-  }).finally(cleanup);
+  });
 }
 
 module.exports = pinCycle;

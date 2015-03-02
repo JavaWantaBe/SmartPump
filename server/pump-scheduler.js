@@ -4,7 +4,8 @@ var configManager = require("./config-manager");
 var tideManager = require("./tide-manager");
 var logger = require("./logger")("pump-scheduler");
 var pumps = require("./pumps");
-var isBeagleBone = require("./global-status").onBeagleBone;
+var getCurrentPump = require("./queries/get-current-pump");
+var pushPumpCycle = require("./queries/push-pump-cycle");
 var oneMonth = 2592000000; // milliseconds in a month
 var currentJob = null;
 
@@ -33,26 +34,31 @@ function start() {
     .then(function(date) {
       var manualMode = configManager.getConfig().manualMode;
 
-      //date = new Date(Date.now() + 5000); // TODO: Remove this before we're finished
+      date = new Date(Date.now() + 10000);
 
       if(isValidDate(date)) {
         logger.info("Scheduling pump job for '" + date + "'");
         return Q.promise(function(resolve, reject) {
           currentJob = new Job(function() {
             logger.info("Starting pumps");
-            if(isBeagleBone()) {
-              return pumps.startCycle().then(resolve, reject);
-            } else { // for debugging without crashing
-              logger.info("Not running on beaglebone. Skipping pumping cycle.");
-              Q.delay(5000).then(resolve, reject);
-            }
+            return getCurrentPump()
+              .catch(function(error) { // just run pump1 if we fail to retrieve current pump
+                logger.error("Failed to retrieve current pump ID from database, running pump 0 " + error);
+                return pumps.startCycle(pumps, 0);
+              })
+              .then(pumps.startCycle.bind(pumps))
+              .then(resolve, reject);
           })
           .on("canceled", resolve.bind(null, true))
           .on("error", reject);
 
           currentJob.schedule(date);
-        }).then(function(canceled) {
-          logger.info("Pump cycle " + (canceled ? "canceled" : "finished") + " at '" + (new Date()) + "'")
+        }).then(function(resultObject) {
+          logger.info("Pump cycle finished. Saving data to database");
+          pushPumpCycle(resultObject)
+            .catch(function(error) {
+              logger.error("Failed to store pump cycle result data to database: " + error);
+            }); 
         });
       } else {
         var now;

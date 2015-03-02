@@ -30,8 +30,7 @@ function log(type, message) {
 function initializePumps() {
     if(status.onBeagleBone()) {
         logger.info("Beagle bone detected. Initializing pumps");
-        return pumps.init()
-            .then(log("info", "Successfully initialized pumps"));
+        return pumps.init();
     } else {
         logger.info("Beagle bone not found. Skipping pump initialization");
     }
@@ -39,6 +38,7 @@ function initializePumps() {
 
 function fatalErrorHandler(error) {
     logger.error("FATAL " + error + ": " + error.stack);
+    console.log("\n -- ALERT -- Restart this system once the issue has been resolved...");
 }
 
 status.init()
@@ -46,9 +46,9 @@ status.init()
     .then(db.connect)
     .then(log("info", "Successfully connected to mysql server"))
     .then(initializePumps)
-    .then(log("info", "Sucessfully initialized pumps"))
+    .then(log("info", "Successfully initialized pumps"))
     .then(webserver.init)
-    .then(log("info", "Sucessfully initialized webserver"))
+    .then(log("info", "Successfully initialized webserver"))
     .then(function() {
         function run() {
             return scheduler.start().then(function() {

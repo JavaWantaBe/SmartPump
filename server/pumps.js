@@ -1,5 +1,6 @@
 var Q = require("q");
 var _ = require("lodash");
+var logger = require("./logger")("pumps");
 var device = require("./device");
 var InputPin = require("./hardware-models/input-pin");
 var OutputPin = require("./hardware-models/output-pin");
@@ -34,14 +35,14 @@ function wait(ms) {
 
 function logError(message) {
   return function(error) {
-    console.log(message + ": " + error);
+    logger.error(message + ": " + error);
     throw error;
   };
 }
 
 function log(message) {
   return function() {
-    console.log(message)
+    logger.info(message);
   };
 }
 
@@ -82,6 +83,7 @@ function getDeviceIO() {
   // the physical pump to start and a valve object, so it
   // can manage its own valve
   var pump1 = new Pump(
+    "pump1",
     outputPins.startPump1, 
     new Valve(
       // open output/input and timeout
@@ -97,6 +99,7 @@ function getDeviceIO() {
   );
 
   var pump2 = new Pump(
+    "pump2",
     outputPins.startPump2, 
     new Valve(
       // open output/input and timeout
@@ -118,19 +121,34 @@ function getDeviceIO() {
   };
 }
 
-// was "preCycle". I chose a name that describes what the function does, not when it's called
 // timing out and turning off pins are both handled by the Valve close function
 function closeValves(pumps) {
-  console.log("Closing valves");
-  return Q.all(_.map(pumps, function(pump) {
-    return pump.valve.close();
-  }))
-  .then(log("Valves closed"))
-  .catch(logError("Failed to close valves"));
+  var closeValve1 = pumps[PUMP1].valve.close();
+  var closeValve2 = pumps[PUMP2].valve.close();
+
+  /*
+    The .catch's are to ensure that both valve's have either
+    closes, failed, or timed out before this function finishes.
+    This keeps the closeValves call in the backup run from
+    causing two interrupts to be attached to the close valve 2 input 
+    pin
+  */
+  return Q.all([
+    closeValve1.catch(function(error) {
+      return closeValve2.then(function() {
+        throw error;
+      });
+    }),
+    closeValve2.catch(function(error) {
+      return closeValve1.then(function() {
+        throw error;
+      });
+    })
+  ]);
 }
 
 function runPrimeCycle(startOutput, endInput) {
-  console.log("Running prime cycle");
+  logger.info("Running prime cycle");
   return pinCycle(
     startOutput, endInput,
     configManager.getConfig().pumpTimeouts.primeTimeOut
@@ -168,7 +186,7 @@ function monitorFlow(pump, tankIsFull, pressure) {
 
     Q.Promise(function(resolve, reject) { // pressure
       pressure.once(function() {
-        console.log("pressure received signal");
+        console.log("pressure signal received");
         cleanupMonitorFlow();
         reject(new Error("Low pressure")); // TODO: Figure out what goes here
       });
@@ -176,7 +194,7 @@ function monitorFlow(pump, tankIsFull, pressure) {
 
     Q.Promise(function(resolve, reject) { // tank full
       tankIsFull.once(function() {
-        console.log("tankIsFull received signal");
+        console.log("tankIsFull signal received");
         cleanupMonitorFlow();
         resolve("Tanks is full");
       });
@@ -190,20 +208,9 @@ function cleanUp(outputPins) {
   _.invoke(outputPins, "turnOff"); // runs .turnOff() on all output pins
 }
 
-function startCycle() {
-  var deviceIO = getDeviceIO();
-  var pumps = deviceIO.pumps;
-  var outputPins = deviceIO.outputPins;
-  var inputPins = deviceIO.inputPins;
-  var pump;
-  // switch pumps on each cycle
-  currentPumpId = (currentPumpId === PUMP1 ? PUMP2 : PUMP1);
-  pump = pumps[currentPumpId];
-
-  return closeValves(pumps)
-    .then(runPrimeCycle.bind(null, outputPins.startPrime, inputPins.primeFinished))
+function runPumpCycle(pump, inputPins, outputPins) {
+  return runPrimeCycle(outputPins.startPrime, inputPins.primeFinished)
     .then(function() {
-      console.log("Starting pump");
       return Q.resolve()
         .then(pump.start.bind(pump))
         .then(log("Pump started successfully"))
@@ -216,29 +223,62 @@ function startCycle() {
     .then(monitorFlow.bind(null, pump, inputPins.tankIsFull, inputPins.pressure))
     .then(function() {
       return pump.stop()
-        .then(log("Pump stopped successfully"))
-        .catch(logError("Failed to stop pump"));
-    })
-    .then(wait.bind(null, 1000 * 60 * 5))
-    .finally(cleanUp.bind(null, outputPins));
+      .then(log("Pump stopped successfully"))
+      .catch(logError("Failed to stop pump"));
+    });
 }
 
+function startCycle(currentPumpId) {
+  var deviceIO = getDeviceIO();
+  var pumps = deviceIO.pumps;
+  var outputPins = deviceIO.outputPins;
+  var inputPins = deviceIO.inputPins;
+  var pump;
+  var backupPump;
+  // switch pumps on each cycle
+  pump = pumps[currentPumpId];
+  backupPump = (currentPumpId === PUMP1 ? pumps[PUMP2] : pumps[PUMP1]);
+  
+  var resultObject = {
+    pump_used: currentPumpId === PUMP1 ? "pump1" : "pump2"
+  };
+  console.log("Starting pump cycle with " + resultObject.pump_used);
+
+  return closeValves(pumps) // close valves, on error, do not try with other pump
+    .then(function() {
+      return runPumpCycle(pump, inputPins, outputPins) // attempt pump cycle with main pump
+        .catch(function(error) { // on fail
+          console.warn("Main pump failed! Switching to backup pump. " + error);
+          return closeValves(pumps) // close valves
+            .then(runPumpCycle.bind(null, backupPump, inputPins, outputPins)); // attempt pump cycle with backup pump
+        })
+    })
+    .then(function() {
+      return resultObject;
+    })
+    .finally(function() {
+      return wait(5000)
+        .then(cleanUp.bind(null, outputPins));
+    });
+}
 
 module.exports = {
   init: function() {
     var pins = configManager.getConfig().pins;
-
-    _.each(pins.outputs, function(output) {
-        device.pinMode(output.pin, device.OUTPUT, 7, "pulldown", "fast", function(x){
-            device.digitalWrite(output.pin, output.offValue === "LOW" ? LOW : HIGH);
+    var pinModePromises = _.map(pins.outputs, function(output) {
+      return Q.Promise(function(resolve, reject) {
+        device.pinMode(output.pin, device.OUTPUT, 7, "pulldown", "fast", function(x) {
+          device.digitalWrite(output.pin, output.offValue === "LOW" ? LOW : HIGH);
+          resolve();
         });
+      });
     });
 
     _.each(pins.inputs, function(input) {
         device.pinMode(input.pin, device.INPUT, 7, "pullup", "fast");
     });
 
-    return Q.resolve();
+    return Q.all(pinModePromises);
   },
 
   startCycle: startCycle

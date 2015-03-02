@@ -11,7 +11,7 @@ var App = React.createClass({
                 <Header/>
                 <Navigation/>
                 <div className="content">
-                    <RouteHandler />
+                    <RouteHandler/>
                 </div>
                 <Footer/>
             </div>

@@ -1,5 +1,6 @@
 var React = require("react");
 
+// this component does nothing it's just markup with classnames for css
 var Header = React.createClass({
     render: function() {
         return (

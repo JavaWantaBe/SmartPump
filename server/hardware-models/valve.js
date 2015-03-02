@@ -15,6 +15,7 @@ var device = require("../device");
 */
 function Valve(openOutput, openSuccessInput, openTimeoutMS,      // open options 
                closeOutput, closeSuccessInput, closeTimeoutMS) { // close options
+
   this.openOutput = openOutput;
   this.openSuccessInput = openSuccessInput;
   this.openTimeoutMS = openTimeoutMS;

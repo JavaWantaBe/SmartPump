@@ -6,7 +6,8 @@ var device = require("../device");
     startOutputPin: OutputPin Object - The pin that signals the pump to turn on
     valve: Valve Object - The valve that corresponds to this pump
 */
-function Pump(startOutputPin, valve) {
+function Pump(id, startOutputPin, valve) {
+  this.id = id;
   this.startOutputPin = startOutputPin;
   this.valve = valve;
   _.bindAll(this); // binds all of this objects methods to itself
@@ -22,9 +23,13 @@ _.extend(Pump.prototype, {
     // valve.open returns a promise, but we don't want to halt execution,
     // so I'm not returning the promise. I am catching its errors so they can be 
     // handled and logged
-
+    console.log(this.id + " - Started");
     this.startOutputPin.turnOn();
-    this.valve.open().catch(function(error) {
+    this.valve.open()
+    .then(function() {
+      console.log(this.id + " - Valve opened");
+    }.bind(this))
+    .catch(function(error) {
       console.log("Error: Valve failed to open: " + error);
     });
   },
@@ -38,7 +43,11 @@ _.extend(Pump.prototype, {
   */
   stop: function() {
     this.startOutputPin.turnOff();
-    return this.valve.close();
+    console.log(this.id + " - Stopped");
+    return this.valve.close()
+    .then(function() {
+      console.log(this.id + " - Valve closed");
+    }.bind(this));
   }
 });
 

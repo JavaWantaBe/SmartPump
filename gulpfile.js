@@ -23,8 +23,6 @@ var bundler = _.once(function() {
     });
 });
 
-
-
 gulp.task("javascript", function() {
     return bundler()
         .bundle()
