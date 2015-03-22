@@ -6,9 +6,9 @@ var Q = require( 'q' ),
    fs = require( 'fs' ),
     b = require( 'bonescript' );
 
-var NET_FILE = './config/interfaces';
+var _interfaceDir = './config/interfaces';
 var ipAddress = new Array();
-var ipMask = new Array();
+var ipMask    = new Array();
 var ipGateway = new Array();
 
 /**
@@ -77,7 +77,9 @@ function get_mode() {
 }
 
 function set_ip( address ) {
-
+    var exec = require('child_process').exec,
+        child;
+    child = exec( 'awk -f ./networkscripts/changeInterface.awk ' + _interfaceDir + ' device=eth0 address=' + address );
 }
 
 function set_dhcp( address ) {
