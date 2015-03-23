@@ -2,100 +2,165 @@
  * Created by richard on 8/29/14.
  */
 
+"use strict";
+
 var Q = require( 'q' ),
    fs = require( 'fs' ),
     b = require( 'bonescript' );
 
-var _interfaceDir = './config/interfaces';
-var ipAddress = new Array();
-var ipMask    = new Array();
-var ipGateway = new Array();
+var _interfaceDir = "./config/interfaces",
+    _scriptRead   = "awk -f " + __dirname + "/networkscripts/readInterfaces.awk " + _interfaceDir + " device=eth0",
+    _scriptWrite  = "awk -f " + __dirname + "/networkscripts/changeInterface.awk " + _interfaceDir + " device=eth0";
 
-/**
- *
- * @returns {null}
- */
-function read_settings()
-{
-    var onBoard = false;
 
-    b.getPlatform( function( x ){
-        if( x.serialNumber ){
-            onBoard = true;
-        }
-    } );
+function get_ip() {
 
-    if( onBoard ){
-        var fileData = fs.readFileSync( NET_FILE, 'utf8' );
+    var exec = require('child_process').exec,
+        ip = new Array();
 
-        fileData = fileData.slice( fileData.search("iface eth0") );
-        fileData = fileData.slice( 0, fileData.search( "\n\n" ) );
+    exec( _scriptRead,
+        function( error, stdout, stderr ){
+            if( error !== null || stderr ){
+                console.log( 'exec error: ' + error );
+            } else {
+                if( stdout == "dhcp" ){
+                    ip = "dhcp";
+                } else {
+                    var settings = stdout.split( " " );
+                    ip = settings[0].split( "." );
+                }
+            }
+        } );
 
-        console.log( "Data: " + fileData );
-    } else {
-        return null;
-    }
+    return ip;
 }
 
-function get_ip()
-{
+function get_sub() {
+
     var exec = require('child_process').exec,
-        child;
+        ip = new Array();
 
-    child = exec( 'ifconfig eth0', function( error, stdout, stdin ){
-        if( stdout !== '' ){
-            var str = stdout.toString(), lines = str.split( "\n" );
-            for( var i = 0; i < lines.length; i++ ){
-                console.log( lines[i] );
+    exec( _scriptRead,
+        function( error, stdout, stderr ){
+            if( error !== null || stderr ){
+                console.log( 'exec error: ' + error );
+            } else {
+                if( stdout == "dhcp" ){
+                    ip = "dhcp";
+                } else {
+                    var settings = stdout.split( " " );
+                    ip = settings[1].split( "." );
+                }
             }
-        }
-    } );
+        } );
 
-    child.stdin.end();
+    return ip;
+}
 
-    /*
-     var ifaces = os.networkInterfaces();
+function get_gw() {
 
-     for( var dev in ifaces.eth0 ){
-     if( ifaces.eth0[dev].family == 'IPv4' ){
-     return ifaces.eth0[dev].address;
-     }
-     }
-     */
+    var exec = require('child_process').exec,
+        ip = new Array();
+
+    exec( _scriptRead,
+        function( error, stdout, stderr ){
+            if( error !== null || stderr ){
+                console.log( 'exec error: ' + error );
+            } else {
+                if( stdout == "dhcp" ){
+                    ip = "dhcp";
+                } else {
+                    var settings = stdout.split( " " );
+                    ip = settings[2].split( "." );
+                }
+            }
+        } );
+
+    return ip;
 }
 
 function get_dhcp() {
 
-}
+    var exec = require( 'child_process' ).exec;
 
-function get_sub_ip() {
-
-}
-
-function get_mode() {
+    exec( _scriptRead,
+        function( error, stdout, stderr ){
+            if( error !== null || stderr ){
+                console.log( 'exec error: ' + error );
+            } else {
+                if( stdout == "dhcp" ){
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+        } );
 
 }
 
 function set_ip( address ) {
-    var exec = require('child_process').exec,
-        child;
-    child = exec( 'awk -f ./networkscripts/changeInterface.awk ' + _interfaceDir + ' device=eth0 address=' + address );
+
+    var exec = require( 'child_process' ).exec;
+
+    exec( _scriptRead,
+        function( error, stdout, stderr ) {
+
+            if( stderr || error !== null ){
+                return null;
+            } else if( stdout == "dhcp" ){
+
+            } else {
+
+                var settings = stdout.split( " " );
+                settings[0] = address.join( "." );
+                exec( _scriptWrite + " address=" + settings[0] + "network=" + settings[1] + "gateway=" + settings[2],
+                    function( error, stdout, stderr ){
+                        // Handle errors
+                    } );
+            }
+        } );
 }
 
-function set_dhcp( address ) {
+function set_sub( address ) {
+    var exec = require('child_process').exec;
+
 
 }
 
-function set_sub_ip( address ) {
+function set_gw( address ) {
+    var exec = require('child_process').exec;
 
 }
 
-function set_mode( mode ) {
+
+function set_dhcp( dhcp_mode ) {
 
 }
 
 function restart_network() {
-    execSync( "ifdwn eth0" );
 
-    execSync( "ifup eth0" );
+    var exec = require( 'child_process' ).exec;
+
+    exec( "ifdown eth0 && ifup eth0",
+        function (error, stdout, stderr) {
+
+            console.log( 'stdout: ' + stdout );
+            console.log( 'stderr: ' + stderr );
+
+            if (error !== null) {
+                console.log( 'exec error: ' + error );
+            }
+        } );
 }
+
+module.exports = {
+    getIP: get_ip,
+    getGW: get_gw,
+    getSub: get_sub,
+    getDHCP: get_dhcp,
+    setIP: set_ip,
+    setGW: set_gw,
+    setSub: set_sub,
+    setDHCP: set_dhcp,
+    restartNetwork: restart_network
+};
