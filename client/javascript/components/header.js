@@ -1,4 +1,5 @@
 var React = require("react");
+var LoginLink = require("components/login-link");
 
 var Header = React.createClass({
     render: function() {
@@ -10,6 +11,7 @@ var Header = React.createClass({
                 </div>
 
                 <div className='slogan'>Redefining Intelligent Systems</div>
+                <LoginLink/>
             </div>
         );
     }

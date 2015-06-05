@@ -1,5 +1,3 @@
-"use strict";
-
 /**
  * @file pumps.js
  *
@@ -12,8 +10,7 @@
 var Q        = require( 'q' ),
     b        = require( 'bonescript' ),
     _        = require( 'lodash' ),
-    db       = require( './database' ),
-    logger   = require( './logger' )( 'pumps' ),
+    log = require("./logger").bind(null, "pumps");
     settings = require( './config/pinconfig'), // Use this instead of fs for JSON objects
     timeOuts = require( './config/pumpsettings' );
 
@@ -21,6 +18,7 @@ var ON = 1,
     OFF = 0;
 
 var stop = false;
+var pumpUsed = "pump1";
 
 // TODO: Flow counter variable needs to be created here.
 
@@ -134,7 +132,7 @@ function endCycle(){
 function emergencyStop(){
     endCycle();
     stop = true;
-    logger.warn( "Emergency Stop Pressed" );
+    log("warn", "Emergency Stop Pressed" );
 }
 
 
@@ -166,8 +164,9 @@ function startcycle(){
     var pump = settings.relays.pump1,               // Pump last used
         pumpOutlet = settings.relays.pump1Outlet;   // Pump outlet valve last used
 
-    return db.query( QUERYSTRING).then( function( result ){
-        pump = result[0].pump_used;
+    log("info", "Starting cycle");
+    return Q.resolve().then(function( result ) { /*db.query( QUERYSTRING)*/
+        pump = pumpUsed;//result[0].pump_used;
 
         if( pump === 'pump1' || pump === null ){
             pump = settings.relays.pump2;
@@ -177,29 +176,28 @@ function startcycle(){
             pumpOutlet = settings.relays.pump1Outlet;
         }
 
-    }, function( err ) {
+    }).catch(function( err ) {
         // error in database connect
-        logger.error( "Failed to connect to database " + err );
-
-    }).then( startPrime, function( err ){
+        log("error", "Failed to connect to database: " + err );
+    }).then( startPrime, function( err ) {
         endCycle();
-        logger.error( "Error: " + err );
-    }, function( progress ){
+        log("error", err );
+    }, function( progress ) {
         // TODO: Add emergency stop
 
-    }).then( startOutlet( pumpOutlet ), function( err ){
+    }).then( startOutlet( pumpOutlet ), function( err ) {
         endCycle();
-        logger.error( "Error: " + err );
-    }, function( progress ){
+        log("error", err );
+    }, function( progress ) {
         // TODO: Add emergency stop
 
-    }).then( startPump( pump ), function( err ){
+    }).then( startPump( pump ), function( err ) {
         endCycle();
-        logger.error( "Error: " + err);
-    }, function( progress ){
+        log("error", err);
+    }, function( progress ) {
         // TODO: Add emergency stop
 
-    }).finally( function(){
+    }).finally( function() {
         // TODO: Log a successful pumping cycle into the database.
         endCycle();
     });
@@ -209,6 +207,36 @@ function startcycle(){
  *
  * @type {{init: init, start: startcycle}}
  */
+
+ function init(){
+    var errorFlag = false;
+    stop = false;
+    log("info", "Initializing pumps");
+
+    // TODO: Pin needed for pressure switch
+    b.attachInterrupt( settings.inputs.emergencyBtn, inputHandler, b.RISING, emergencyStop );
+
+    _.forEach( settings.relays, function( pin ){
+        if( b.pinMode( pin, b.OUTPUT ) === false ){
+            errorFlag = true;
+        }
+    });
+
+    _.forEach( settings.inputs, function( pin ){
+        if( b.pinMode( pin, b.INPUT ) === false ){
+            errorFlag = true;
+        }
+    });
+
+    if( errorFlag === true ){
+        log("info", "Pump pins initialized" );
+    } else {
+        log("error", "Pin assignment failed" );
+        throw new Error( "Pin assignment failed" );
+    }
+}
+
+init();
 
 /**
  *  @brief Initializes pins for inputs and outputs
@@ -220,31 +248,6 @@ function startcycle(){
  *
  */
 module.exports = {
-    init:function(){
-            var errorFlag = false;
-            stop = false;
-
-            // TODO: Pin needed for pressure switch
-            b.attachInterrupt( settings.inputs.emergencyBtn, inputHandler, b.RISING, emergencyStop );
-
-            _.forEach( settings.relays, function( pin ){
-                if( b.pinMode( pin, b.OUTPUT ) === false ){
-                    errorFlag = true;
-                }
-            });
-
-            _.forEach( settings.inputs, function( pin ){
-                if( b.pinMode( pin, b.INPUT ) === false ){
-                    errorFlag = true;
-                }
-            });
-
-            if( errorFlag === true ){
-                logger.info( "pump pins initialized" );
-            } else {
-                logger.error( "pin assignment failed" );
-                throw new Error( "Pin assignment failed" );
-            }
-        },
-    start: startcycle
+    start: startcycle,
+    emergencyStop: emergencyStop
 };

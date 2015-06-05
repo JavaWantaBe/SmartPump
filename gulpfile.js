@@ -1,12 +1,11 @@
 "use strict";
 
-var gulp        = require("gulp"),                // Task runner
-    gutil       = require("gulp-util"),
-    Q           = require("q"),
-    _           = require("lodash"),
-    plumber     = require("gulp-plumber"),        // Handles gulp errors without stopping the watch task
-    source      = require("vinyl-source-stream"), // Allows the use of text streams with gulp (needed for browserify)
-    port        = 8888;                           // For test server
+var gulp = require("gulp"); // Task runner
+var gutil = require("gulp-util");
+var Q = require("q");
+var _ = require("lodash");
+var plumber = require("gulp-plumber"); // Handles gulp errors without stopping the watch task
+var source = require("vinyl-source-stream"); // Allows the use of text streams with gulp (needed for browserify)
 
 var bundler = _.once(function() {
     var Browserify = require("browserify"),
@@ -19,9 +18,12 @@ var bundler = _.once(function() {
     .transform(require("6to5ify"))
     .transform('brfs')
     .add("./client/javascript/app.js")
-    .on('update', bundle)
+    .on("update", bundle)
     .on("time", function(time) {
         gutil.log("Finished building (" + time + " ms)");
+    })
+    .on("error", function(error) {
+        console.log(error.toString());
     });
 });
 
@@ -69,12 +71,10 @@ gulp.task("server", (function() { // IIFE
         }
 
         if(server) {
-            server.on("close", spawnServer);
             server.kill("SIGINT");
         }
-        else {
-            spawnServer();
-        }
+
+        spawnServer();
     }
 }()));
 
@@ -85,7 +85,7 @@ gulp.task("build", ["javascript", "styles", "html", "statics"]);
 gulp.task("watch", ["build", "server"], function() {
     gulp.watch("client/styles/**/*.scss", ["styles"]);
     gulp.watch("client/index.html", ["html"]);
-    gulp.watch(["server/**/*", "!server/public", "!server/public/**/*"], ["server"]);
+    gulp.watch(["server/**/*.js", "!server/public", "!server/public/**/*", "!server/config"], ["server"]);
 });
 
 gulp.task("default", ["watch"]);

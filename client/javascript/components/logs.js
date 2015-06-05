@@ -1,15 +1,12 @@
-var React    = require("react"),
-    _        = require("lodash");
+var React    = require("react");
+var _        = require("lodash");
+var isAuthorized = require("utility/is-authorized");
 
 var filters = {
     all: null,
 
     info: function(entry) {
         return entry.level === "info";
-    },
-
-    warning: function(entry) {
-        return entry.level === "warning";
     },
 
     error: function(entry) {
@@ -26,9 +23,22 @@ function reverse(arr) {
 
 var Logs = React.createClass({
     mixins: [
-        require("react-router").Navigation,
-        require("mixins/store-listener")(require("stores/log-store"), {reloadOnRefresh: true})
+        require("react-router").Navigation
     ],
+
+    statics: {
+        willTransitionTo: function(transition, params, query, callback) {
+            isAuthorized()
+                .then(() => {
+                    actions.fetch();
+                    callback();
+                })
+                .catch(() => {
+                    transition.redirect("login");
+                    callback();
+                });
+        }
+    },
 
     getInitialState: function() {
         return {
@@ -77,7 +87,6 @@ var Logs = React.createClass({
                 <p>Filter by level</p>
                 {this.renderFilterRadio("All",     filters.all)}
                 {this.renderFilterRadio("Info",    filters.info)}
-                {this.renderFilterRadio("Warning", filters.warning)}
                 {this.renderFilterRadio("Error",   filters.error)}
                 <button onClick={this.load}>Fetch</button>
                 <table>

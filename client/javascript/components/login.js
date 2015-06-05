@@ -1,13 +1,12 @@
-var React   = require("react"),
-    request = require("superagent"),
-    stores  = [
-        require("stores/log-store"),
-        require("stores/schedule-store"),
-        require("stores/settings-store")
-    ];
+var React = require("react");
+var Reflux = require("reflux");
+var login = require("actions/login");
 
 var Login = React.createClass({
-    mixins: [require("react-router").Navigation],
+    mixins: [
+        require("react-router").Navigation,
+        Reflux.ListenerMixin
+    ],
 
     getInitialState: function() {
         return {
@@ -17,41 +16,25 @@ var Login = React.createClass({
         };
     },
 
-    preloadData: function() {
-        stores.forEach((store) => {
-            request.get(store.path, (response) => {
-                if(response.status === 200) {
-                    store.setData(JSON.parse(response.text));
-                }
-                else {
-                    console.error("Failed to fetch data from " + store.path);
-                }
-            });
-        });
-    },
-
     submit: function(event) {
         event.preventDefault();
-        request.post("/login", {
-            username: this.state.username, 
-            password: this.state.password
-        }, (res) => {
-            if(res.status === 200) { // Success
-                this.preloadData();
-                this.transitionTo("dashboard");
-            }
-            else {
-                this.setState({
-                    failed: true,
-                    username: "",
-                    password: ""
-                });
-            }
-        });
+        login(this.state.username, this.state.password);
     },
 
     componentDidMount: function() {
         this.refs.usernameInput.getDOMNode().focus();
+
+        this.listenTo(login.completed, () => {
+            this.transitionTo("dashboard");
+        });
+
+        this.listenTo(login.failed, () => {
+            this.setState({
+                username: this.state.username,
+                password: "",
+                failed: true
+            });
+        });
     },
 
     updateUsername: function(event) {

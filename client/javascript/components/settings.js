@@ -1,83 +1,68 @@
 var React = require("react");
+var IpInput = require("components/ip-input");
+var isAuthorized = require("utility/is-authorized");
 
 var Settings = React.createClass({
     mixins: [
-        require("react-router").Navigation,
-        require("mixins/store-listener")(require("stores/settings-store"))
+        require("react-router").Navigation
     ],
 
-    toggleDynamic: function() {
-        this.state.settings.dynamic = !this.state.settings.dynamic;
-        this.setState(this.state);
+    statics: {
+        willTransitionTo: function(transition, params, query, callback) {
+            isAuthorized()
+                .then(() => {
+                    console.log("Auth completed");
+                    callback();
+                })
+                .catch((error) => {
+                    console.log("Auth failed:", error);
+                    transition.redirect("login");
+                    callback();
+                });
+        }
     },
 
-    saveSettings: function() {
-        this.save({
-            settings: this.state.settings
+    getInitialState: function() {
+        return {
+            ip: [192, 168, 1, 5],
+            subnet: [255, 255, 255, 0],
+            gateway: [192, 168, 1, 1]
+        };
+    },
+
+    toggleDynamic: function() {
+
+    },
+
+    save: function() {
+
+    },
+
+    setIp: function(ip) {
+        this.setState({
+            ip: ip
         });
     },
 
-    renderByteArray: function(name, settingId) {
-        var byteArray = this.state.settings[settingId];
-        return (
-            <div>
-                <p>{name}</p>
-                {byteArray.map((b, index) => (
-                    <input key={settingId+"-"+index}
-                        value={b}
-                        disabled={this.state.settings.dynamic}
-                        onChange={(event) => {
-                            byteArray[index] = +event.target.value;
-                            this.setState(this.state);
-                        }}
-                        type="number"
-                        min="0"
-                        max="255"/>
-                ))}
-            </div>
-        );
-    },
-
-    renderSettingInput: function(name, key) {
-        return (
-            <div>
-                <p>{name}</p>
-                <input
-                    type='number' 
-                    value={this.state.settings[key]} 
-                    onChange={(event) => {
-                        this.state.settings[key] = event.target.value;
-                        this.setState(this.state);
-                    }}/>
-            </div>
-        );
-    },
-
     render: function() {
-        if(this.state.settings) {
-            return (
-                <div className='settings'>
-                    <input type="checkbox" checked={this.state.settings.dynamic} onChange={this.toggleDynamic}/> <label>DHCP Mode</label>
-                    {this.renderByteArray("IP Address", "ip")}
-                    {this.renderByteArray("Subnet Mask", "subnet")}
-                    {this.renderByteArray("Default Gateway", "gateway")}
+        return (
+            <div className="settings">
+                <input type="checkbox" onChange={this.toggleDynamic}/> <label>DHCP Mode</label>
+                <IpInput values={this.state.ip} onChange={this.setIp}>IP Address</IpInput>
 
-                    {this.renderSettingInput("Priming Cycle Timeout (ms)", "primeTimeOut")}
-                    {this.renderSettingInput("Outlet Timeout (ms)", "outletTimeout")}
-                    {this.renderSettingInput("Pumping Timeout (ms)", "pumpingTimeOut")}
-                    {this.renderSettingInput("General Timeout (ms)", "generalTimeOut")}
-
-                    <button onClick={this.saveSettings}>Save</button>
-                </div>
-            );
-        }
-        else {
-            return (
-                <div className='settings'>
-                </div>
-            );
-        }
+                <button onClick={this.saveSettings}>Save</button>
+            </div>
+        );
     }
 });
 
 module.exports = Settings;
+
+//{/*this.renderByteArray("IP Address", "ip")*/}
+//{/*this.renderByteArray("Subnet Mask", "subnet")*/}
+//{/*this.renderByteArray("Default Gateway", "gateway")*/}
+
+//{/*this.renderSettingInput("Priming Cycle Timeout (ms)", "primeTimeOut")*/}
+//{/*this.renderSettingInput("Outlet Timeout (ms)", "outletTimeout")*/}
+//{/*this.renderSettingInput("Pumping Timeout (ms)", "pumpingTimeOut")*/}
+//{/*this.renderSettingInput("General Timeout (ms)", "generalTimeOut")*/}

@@ -1,5 +1,4 @@
-"use strict";
 
-window.addEventListener('load', function() {
+window.addEventListener("load", function() {
     require("router");
-}, false)
+}, false);

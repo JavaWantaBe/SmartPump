@@ -35,6 +35,7 @@
     "session": "^0.1.0",
     "superagent": "^0.21.0",
     "winston": "~0.7.3",
-    "winston-mysql-transport": "~0.1.2"
+    "winston-mysql-transport": "~0.1.2",
+    "reflux": "^0.2.7"
   }
 }

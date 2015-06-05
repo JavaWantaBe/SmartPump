@@ -1,7 +1,7 @@
-var React        = require("react"),
-    Router       = require("react-router"),
-    DefaultRoute = Router.DefaultRoute,
-    Route        = Router.Route;
+var React        = require("react");
+var Router       = require("react-router");
+var DefaultRoute = Router.DefaultRoute;
+var Route        = Router.Route;
 
 var routes = (
     <Route path="/" handler={require("components/app")}>
