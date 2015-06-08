@@ -9,7 +9,7 @@
     "vinyl-source-stream": "^1.0.0",
     "gulp": "~3.8.0",
     "gulp-plumber": "~0.6.2",
-    "gulp-ruby-sass": "~0.5.0",
+    "gulp-ruby-sass": "~1.0.1",
     "gulp-util": "^3.0.3",
     "should": "~4.0.1"
   },
