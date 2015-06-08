@@ -18,32 +18,24 @@ var logger    = require("./logger")("index"),
     scheduler = require("./pump-scheduler"),
     db        = require("./database"),
     pumps     = require("./pumps"),
-    b         = require( 'bonescript' ),
-    Q         = require( 'q' );
+    Q         = require( 'q' ),
+    status    = require("./global_status");
 
-var onBoard = false;
 
-function printBoard( values ){
-    logger.debug( "*****Startup Sequence*****" );
-    if( values.version ){
-        onBoard = true;
-        logger.debug( "Name: " + values.name + "\nVersion: " + values.version + "\nSerialNumber: " + values.serialNumber + "\nBonescript: " + values.bonescript );
-    }   
-}
+status.statusInit(); // Initializes the systems global variables and checks if installed on a beaglebone
 
-b.getPlatform( printBoard );
 
 db.connect().then(
     function() {
         logger.info( "Successfully connected to mysql database" );
 
-        if( onBoard ){
+        if( status.onBeagleBone() ){
             logger.debug("Found beaglebone");
             
             try{
                 pumps.init();
             } catch( e ){
-                logger.error( "Fatal Error: " + e );
+                logger.error("Fatal Error: " + e);
             }
         } else {
             logger.debug("Not a beaglebone platform, not initializing pumps");
@@ -55,11 +47,9 @@ db.connect().then(
         logger.error("Fatal - " + err );
         return Q.reject();
     }
-)
-.then( function() {
+).then( function() {
     require("./test-user"); // TODO: Remove test user before we install
-})
-.then( function(){
+}).then( function(){
     return webserver.init();
 }, function( err ){
     logger.debug( "Error: " + err );
