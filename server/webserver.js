@@ -16,7 +16,7 @@ var _             = require("lodash"),
     getUser       = require("./queries/getUser"),
     getLogs       = require("./queries/getLogs"),
     app           = express(),
-    port          = 1080,
+    port          = 8080,
     staticFiles   = __dirname + "/public";
 
 function checkAuthenticated(req, res, next) {
@@ -184,6 +184,8 @@ passport.use("local-login", strategy);
 
 module.exports = {
     init: function() {
+        logger.debug( "Made it here " );
         app.listen(port);
+        logger.debug( "Listening on port: " + port );
     }
 };

@@ -19,7 +19,7 @@ var logger    = require("./logger")("index"),
     db        = require("./database"),
     pumps     = require("./pumps"),
     Q         = require( 'q' ),
-    status    = require("./global_status");
+    status    = require("./global-status");
 
 
 status.statusInit(); // Initializes the systems global variables and checks if installed on a beaglebone
@@ -47,10 +47,8 @@ db.connect().then(
         logger.error("Fatal - " + err );
         return Q.reject();
     }
-).then( function() {
-    require("./test-user"); // TODO: Remove test user before we install
-}).then( function(){
+).then( function(){
     return webserver.init();
-}, function( err ){
-    logger.debug( "Error: " + err );
+    }).catch( function( err ){
+        logger.debug( "Error: " + err );
 });

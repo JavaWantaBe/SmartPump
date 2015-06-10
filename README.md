@@ -8,6 +8,7 @@ You need the following dependencies:
 
 ```sh
 $ sudo apt-get install nodejs npm ruby
+$ sudo gem install sass && sudo gem install susy
 ```
 ## Note
 

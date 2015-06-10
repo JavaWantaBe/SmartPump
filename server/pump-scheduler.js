@@ -10,11 +10,13 @@ var logger          = require("./logger")("pump-scheduler"),
     moment          = require("moment"),
     Q               = require("q"),
     db              = require("./database"),
-    schedule        = require( 'node-schedule' ), // https://www.npmjs.org/package/node-schedule
-    pump            = require( './pumps' ),
-    b               = require( 'bonescript'),
+    schedule        = require("node-schedule"), // https://www.npmjs.org/package/node-schedule
+    pump            = require("./pumps"),
+    b               = require("bonescript"),
+    status          = require("./global-status.js" ),
     entries         = [],
     scheduledTask   = null;
+
 
 /**
  * @brief Sets the alarm time for when the next cycle will start.
@@ -33,23 +35,29 @@ function setNextAlarm() {
     db.query( QUERY ).then( function( result ){
 
         var time = moment( result[0].TIDE );
-        if(!result[0].TIDE) {
+
+        if(!result[0].TIDE){ // TODO: This could be done better by checking the time object instead
+            logger.debug("Invalid tide returned from database");
             deffered.resolve();
-        }
-        else if(!time.isValid() ){
+        } else if(!time.isValid()){
             deffered.reject( "Invalid time" );
         } else {
-            logger.info( "Next tide scheduled at: " + time.format( "MMM Do HH:mm" ) );
-            scheduledTask = schedule.scheduleJob( time, function(){
 
-                if( b.getPlatform.serialNumber ){
+            var date = new Date( time );
+
+            scheduledTask = schedule.scheduleJob( date, function(){
+                logger.debug("Starting Scheduled Event");
+
+                if( status.onBeagleBone() ){
                     logger.debug( "Found beaglebone, starting pumps" );
                     return pump.start().finally( setNextAlarm() );
                 } else {
                     logger.debug( "Not a beaglebone platform, not setting pump cycle" );
                     setNextAlarm();
                 }
-            });
+            }); // End of scheduled function to run at next tide
+
+            logger.info( "Next tide scheduled at: " + time.format( "MMM Do HH:mm" ) );
 
             deffered.resolve();
         }
@@ -186,7 +194,7 @@ function setEntries( _entries ){
  *
  */
 function cancelNextCycle(){
-    if(scheduledTask) {
+    if(scheduledTask){
         scheduledTask.cancelJob();
     }
 }
