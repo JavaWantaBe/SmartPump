@@ -39,9 +39,7 @@ gulp.task("javascript", bundle);
 // Compile scss files
 gulp.task("styles", function() {
     var sass = require("gulp-ruby-sass");
-    return gulp.src("client/styles/styles.scss")
-        .pipe(plumber())
-        .pipe(sass({style: "compressed", require: ["susy"]}))
+    return sass("client/styles/styles.scss", {style: "compressed", require: ["susy"]})
         .pipe(gulp.dest("server/public"));
 });
 

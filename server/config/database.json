@@ -3,7 +3,7 @@
     "port":     "3306",
     "database": "smartpump",
     "table":    "log",
-    "user":     "root",
+    "user":     "smartpump",
     "password": "foobar123",
     "dateStrings": "false"
 }
