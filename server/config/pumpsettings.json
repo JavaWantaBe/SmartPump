@@ -1,6 +1,6 @@
 {
-    "primeTimeOut": 70000,
-    "outletTimeOut": 10000,
-    "pumpingTimeOut": 200000,
-    "generalTimeOut": 5000
+    "primeTimeOut": 70025,
+    "outletTimeOut": 9991,
+    "pumpingTimeOut": 200008,
+    "generalTimeOut": 4996
 }

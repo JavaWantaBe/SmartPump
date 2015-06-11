@@ -8,6 +8,7 @@ var SettingsStore = _.extend({}, require("utility/emitter"), {
     settings: null,
 
     setData: function(data) {
+        console.log("DATA:", data);
         this.loaded = true;
         this.settings = data.settings;
         this.fire("update");
