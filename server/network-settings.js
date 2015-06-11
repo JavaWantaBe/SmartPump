@@ -15,26 +15,6 @@ var _interfaceDir = __dirname + "/config/interfaces",
 
 var cachedSettings = null;
 
-//var _interface = fs.readFileSync(_interfaceDir);
-
-//console.log(_interface.toString());
-
-
-        // function( error, stdout, stderr ){
-        //     if( error !== null || stderr ){
-        //         console.log( 'exec error: ' + error );
-        //         ip = null;
-        //         reject();
-        //     } else {
-        //         if( stdout == "dhcp" ){
-        //             ip = "dhcp";
-        //         } else {
-        //             var settings = stdout.split( " " );
-        //             ip = settings[0].split( "." );
-        //         }
-        //     }
-        // }
-
 function toInt(n) {
     return parseInt(n); // parseInt takes a radix, so calling .map(parseInt) won't be base 10
 }
@@ -45,6 +25,15 @@ function pluck(key) {
     };
 }
 
+
+/*
+    returns a promise that resolves into:
+        {
+            ip: [int, int, int, int],
+            subnet: [int, int, int, int],
+            gateway: [int, int, int, int]
+        }
+*/
 function getSettings() {
     if(cachedSettings) {
         return Q.resolve(cachedSettings);
