@@ -19,21 +19,35 @@ var Schedule = React.createClass({
     },
 
     toggleManualMode: function() {
-        this.state.schedule.manualMode = !this.state.schedule.manualMode;
-        this.setState(this.state);
+        if(this.state.schedule.manualMode) {
+            this.setState(this.getInitialState());
+        }
+        else {
+            this.state.schedule.manualMode = !this.state.schedule.manualMode;
+            this.setState(this.state);
+        }
     },
 
     startPumps: function() {
-        request.get("/start-pumps", function(response) {
-            if(response.status === 200) {
-                alert("Pumps started");
-            }
+        if(window.confirm("Are you sure you want to start the pumps?")) {
+            request.get("/start-pumps", function(response) {
+                if(response.status === 200) {
+                    alert("Pumps started");
+                }
+            });
+        }
+    },
+
+    removeEntry: function(entryToRemove) {
+        this.state.schedule.entries = this.state.schedule.entries.filter(function(entry) {
+            return entry !== entryToRemove;
         });
+        this.setState(this.state);
     },
 
     renderEntry: function(entry) {
         return (
-            <div key={entry.key}>
+            <div key={entry.key} className="schedule__entry">
                 <input
                     type="date"
                     value={entry.date}
@@ -50,6 +64,10 @@ var Schedule = React.createClass({
                         entry.time = event.target.value
                         this.setState(this.state);
                     }}/>
+                {this.state.schedule.manualMode ?
+                    <button onClick={this.removeEntry.bind(this, entry)}>Remove</button> :
+                    null
+                }
             </div>
         );
     },
@@ -73,7 +91,10 @@ var Schedule = React.createClass({
                 <div className="schedule__entries">
                     {this.state.schedule.entries.map(this.renderEntry)}
                 </div>
-                <button onClick={this.saveSchedule}>Save</button>
+                {manualMode ? 
+                    <button onClick={this.saveSchedule}>Save</button> :
+                    null
+                }
             </div>
         );
     }

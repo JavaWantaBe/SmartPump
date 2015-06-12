@@ -14,7 +14,6 @@ var logger          = require("./logger")("pump-scheduler"),
     pump            = require("./pumps"),
     b               = require("bonescript"),
     status          = require("./global-status.js" ),
-    entries         = [],
     scheduledTask   = null;
 
 
@@ -128,7 +127,6 @@ function requestData(){
  * @returns {*}
  */
 function init(){
-
     return databaseAge().then( function( result ) {
         return ( result > 0 ) ? requestData() : true;
     }).then( function( result ){
@@ -148,10 +146,13 @@ function init(){
  * @param entries
  * @returns {*}
  */
-function storeEntries( entries ){
-    return Q.all(_.map(entries, function(entry) {
-        return entry.insert(db);
-    }));
+function storeEntries(entries){
+    return db.query("DELETE FROM tide")
+        .then(function() {
+            return Q.all(_.map(entries, function(entry) {
+                return entry.insert(db);
+            }));
+        });
 }
 
 /**
@@ -159,25 +160,18 @@ function storeEntries( entries ){
  * @returns {*}
  */
 function getEntries(){
-    // TODO: Need to get these values from the database
-    var QUERY = "SELECT tide_time FROM tide WHERE tide_time > NOW() ORDER BY tide_time",
-        deffered = Q.defer();
+    var QUERY = "SELECT tide_time FROM tide WHERE tide_time > NOW() ORDER BY tide_time";
 
-    db.query( QUERY ).then( function( result ){
-        var myarray = _.toArray( result );
-        entries = [];
-        _.forEach( myarray, function( what ){
-            entries.push( what.tide_time );
+    return db.query(QUERY)
+        .then(function(rows){
+            return _.toArray(rows).map(function(entry) {
+                return entry.tide_time;
+            });
+        })
+        .then(function(times) {
+            return times;
         });
 
-        deffered.resolve( entries );
-
-    }, function( err ){
-        logger.error( "No data - " + err );
-        deffered.reject();
-    });
-
-    return deffered.promise;
 }
 
 /**
@@ -185,9 +179,8 @@ function getEntries(){
  * @param _entries
  * @returns {*}
  */
-function setEntries( _entries ){
-    entries = _entries;
-    return storeEntries(_entries);
+function setEntries( entries ){
+    return storeEntries(entries);
 }
 
 /**

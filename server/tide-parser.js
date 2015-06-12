@@ -99,7 +99,9 @@ function parseTideData(data) {
         return null;
     }
 
-    return _.compact(_.map(lines, parseLine)); // compact removes falsy values
+    return _.compact(_.map(lines, parseLine)).filter(function(entry) {
+        return entry.high;
+    }); // compact removes falsy values
 }
 
 module.exports = {

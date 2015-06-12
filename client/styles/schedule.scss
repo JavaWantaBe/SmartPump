@@ -3,3 +3,14 @@
     overflow: auto;
     border: 1px solid #d0d0d0;
 }
+
+.schedule__entry {
+	height: 30px;
+	padding: 3px;
+	input {
+		height: 100%;
+	}
+	button {
+		height: 100%;
+	}
+}

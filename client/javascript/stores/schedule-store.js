@@ -6,7 +6,7 @@ var ScheduleStore = _.extend({}, require("utility/emitter"), {
     path: "/schedule",
     loaded: false,
     schedule: {
-        manualMode: true,
+        manualMode: false,
         entries: []
     },
 
@@ -26,7 +26,7 @@ var ScheduleStore = _.extend({}, require("utility/emitter"), {
 
     getState: function() {
         return {
-            schedule: this.schedule
+            schedule: _.cloneDeep(this.schedule)
         };
     }
 });

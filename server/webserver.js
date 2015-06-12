@@ -48,36 +48,6 @@ function validateUser(username, password) {
     });
 }
 
-// TODO: Move this variable somewhere more fittings
-var manualMode = false;
-function getSchedule() {
-    return scheduler.getEntries().then(function(entries) {
-        return {
-            schedule: {
-                entries: entries,
-                manualMode: manualMode
-            }
-        };
-    });
-}
-
-function setSchedule(schedule) {
-    manualMode = schedule.manualMode;
-    return scheduler.setEntries(schedule.entries.map(function(time) {
-        return TideEntry.fromDBModel({
-            time: time
-        });
-    }));
-}
-
-function error(message) {
-    return {
-        error: {
-            message: message
-        }
-    };
-}
-
 
 function getSettings() {
     // TODO: Richard retrieve actual network info
@@ -112,34 +82,64 @@ app.route("/settings")
                 res.json({settings: settings});
             })                
             .catch(function(error) {
-                console.log("Failed to getSettings: " + error);
+                console.log("getSettings failed: " + error);
             })
     })
     .post(checkAuthenticated, function(req, res) {
-        if(req.body && req.body.settings) {
-            setSettings(req.body.settings)
-                .then(function(settings) {
-                    res.json({settings: settings});
-                })
-                .catch(function(error) {
-                    console.log("Failed to setSettings: " + error);
-                })
-        }
-        else {
-            console.log("req.body.settings missing", req.body);
-        }
+        setSettings(req.body.settings)
+            .then(function(settings) {
+                res.json({settings: settings});
+            })
+            .catch(function(error) {
+                console.log("setSettings failed: " + error);
+            });
     });
+
+// TODO: Move this variable somewhere more fittings
+var manualMode = false;
+function getSchedule() {
+    return scheduler.getEntries()
+        .then(function(entries) {
+            return {
+                entries: entries,
+                manualMode: manualMode
+            };
+        })
+}
+
+function setSchedule(schedule) {
+    manualMode = schedule.manualMode;
+    return scheduler
+        .setEntries(schedule.entries.map(function(time) {
+            return TideEntry.fromDBModel({
+                time: time
+            });
+        }))
+        .then(function() {
+            return schedule;
+        });
+}
 
 // Schedule
 app.route("/schedule")
     .get(checkAuthenticated, function(req, res) {
-        getSchedule().then(res.json.bind(res));
+        getSchedule()
+            .then(function(schedule) {
+                res.json({schedule: schedule});
+            })
+            .catch(function(error) {
+                console.log("getSchedule failed: " + error);
+            });
     })
     .post(checkAuthenticated, function(req, res) {
         if(req.body && req.body.schedule && req.body.schedule.entries) {
             setSchedule(req.body.schedule)
-                .then(getSchedule)
-                .then(res.json.bind(res));
+                .then(function(schedule) {
+                    res.json({schedule: schedule});
+                })
+                .catch(function(error) {
+                    console.log("setSchedule failed: " + error);
+                });
         }
     });
 
@@ -195,7 +195,6 @@ passport.use("local-login", strategy);
 
 module.exports = {
     init: function() {
-        logger.debug( "Made it here " );
         app.listen(port);
         logger.debug( "Listening on port: " + port );
     }

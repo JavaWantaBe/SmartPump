@@ -22,6 +22,9 @@ var bundler = _.once(function() {
     .on('update', bundle)
     .on("time", function(time) {
         gutil.log("Finished building (" + time + " ms)");
+    })
+    .on("error", function(error) {
+        console.log("Bundler error: " + error);
     });
 });
 
@@ -55,35 +58,13 @@ gulp.task("statics", function() {
         .pipe(gulp.dest("server/public"));
 });
 
-// Starts the server module. If it's already started,
-// send a kill signal, and start it again once it ends
-gulp.task("server", (function() { // IIFE
-    var server;
-    return function() {
-        var spawn = require("child_process").spawn;
-
-        function spawnServer() {
-            server = spawn("node", [__dirname + "/server/index"], {stdio: "inherit"});
-        }
-
-        if(server) {
-            server.on("close", spawnServer);
-            server.kill("SIGINT");
-        }
-        else {
-            spawnServer();
-        }
-    }
-}()));
-
 // Build web version
 gulp.task("build", ["javascript", "styles", "html", "statics"]);
 
 // Watch source files for changes. Rebuild necessary files when changes are made
-gulp.task("watch", ["build", "server"], function() {
+gulp.task("watch", ["build"], function() {
     gulp.watch("client/styles/**/*.scss", ["styles"]);
     gulp.watch("client/index.html", ["html"]);
-    gulp.watch(["server/**/*", "!server/public", "!server/public/**/*"], ["server"]);
 });
 
 gulp.task("default", ["watch"]);

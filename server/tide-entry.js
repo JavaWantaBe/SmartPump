@@ -63,12 +63,8 @@ _.extend(Entry.prototype, {
     insert: function(db) {
         var data = this.getDBModel(),
             query = "INSERT INTO tide( tide_time, data_download_date  ) VALUES( ?, NOW() ) ON DUPLICATE KEY UPDATE tide_time = VALUES( tide_time ), data_download_date = NOW()";
-
-        if( data.high === true ){
-            return db.query(query, data.time );
-        } else {
-            return Q.resolve();
-        }
+            console.log("Inserting", data.time);
+        return db.query(query, data.time );
     }
 });
 
