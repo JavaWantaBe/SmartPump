@@ -17,7 +17,7 @@ var logger    = require("./logger")("index"),
     db        = require("./database"),
     pumps     = require("./pumps"),
     Q         = require( 'q' ),
-    status    = require("./global_status");
+    status    = require("./global-status");
 
 
 status.statusInit(); // Initializes the systems global variables and checks if installed on a beaglebone
