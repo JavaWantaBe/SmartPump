@@ -15,9 +15,25 @@ var _             = require("lodash"),
     scheduler     = require("./pump-scheduler"),
     getUser       = require("./queries/getUser"),
     getLogs       = require("./queries/getLogs"),
+    network       = require("./network-settings"),
+    timeout       = require("./timeout-settings"),
     app           = express(),
     port          = 8080,
     staticFiles   = __dirname + "/public";
+
+app.use(morgan("dev"));
+app.use(bodyParser());
+app.use(cookieParser());
+app.use(bodyParser.urlencoded({extended: true}));
+app.use(flash());
+app.use(session({
+    secret: "this is my really creative secret",
+    resave: false,
+    saveUninitialized: false
+}));
+app.use(passport.initialize());
+app.use(passport.session());
+app.use(express.static(staticFiles));
 
 function checkAuthenticated(req, res, next) {
     if(req.isAuthenticated()) {
@@ -30,34 +46,6 @@ function validateUser(username, password) {
     return getUser(username, password).then(function(user) {
         return !!user;
     });
-}
-
-// TODO: Remove placeholder data
-var settingsData = { // Placeholder data
-    settings: {
-        dynamic: true,
-        ip: [192,168,1,1],
-        subnet: [255,255,255,0],
-        gateway: [192,168,1,5],
-
-        primeTimeOut: 10000,
-        outletTimeout: 20000,
-        pumpingTimeOut: 30000,
-        generalTimeOut: 40000
-    }
-};
-
-function getSettings() {
-    // TODO: Richard retrieve actual network info
-    return Q.resolve(settingsData);
-}
-
-function setSettings(settings) {
-    // TODO: Richard set actual network settings
-    settingsData = {
-        settings: settings
-    };
-    return Q.resolve(settingsData);
 }
 
 // TODO: Move this variable somewhere more fittings
@@ -90,32 +78,55 @@ function error(message) {
     };
 }
 
-app.use(morgan("dev"));
-app.use(bodyParser());
-app.use(cookieParser());
-app.use(bodyParser.urlencoded({extended: true}));
-app.use(flash());
-app.use(session({
-    secret: "this is my really creative secret",
-    resave: false,
-    saveUninitialized: false
-}));
-app.use(passport.initialize());
-app.use(passport.session());
-app.use(express.static(staticFiles));
+
+function getSettings() {
+    // TODO: Richard retrieve actual network info
+    return network.getSettings()
+        .then(function(netSettings) {
+            return _.extend({}, netSettings, timeout.getSettings());
+        });
+}
+
+function setSettings(settings) {
+    var networkSettings = {
+        ip: settings.ip,
+        subnet: settings.subnet,
+        gateway: settings.gateway
+    };
+    var timeoutSettings = {
+        primeTimeOut: settings.primeTimeOut,
+        outletTimeOut: settings.outletTimeOut,
+        pumpingTimeOut: settings.pumpingTimeOut,
+        generalTimeOut: settings.generalTimeOut
+    };
+    network.setSettings(networkSettings);
+    timeout.setSettings(timeoutSettings);
+    return Q.resolve(settings);
+}
 
 // Settings
 app.route("/settings")
     .get(checkAuthenticated, function(req, res) {
-        getSettings().then(function(settings) {
-            res.json(settings);
-        });
+        getSettings()
+            .then(function(settings) {
+                res.json({settings: settings});
+            })                
+            .catch(function(error) {
+                console.log("Failed to getSettings: " + error);
+            })
     })
     .post(checkAuthenticated, function(req, res) {
         if(req.body && req.body.settings) {
             setSettings(req.body.settings)
-                .then(getSettings)
-                .then(res.json.bind(res));
+                .then(function(settings) {
+                    res.json({settings: settings});
+                })
+                .catch(function(error) {
+                    console.log("Failed to setSettings: " + error);
+                })
+        }
+        else {
+            console.log("req.body.settings missing", req.body);
         }
     });
 

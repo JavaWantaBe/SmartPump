@@ -46,7 +46,7 @@ var Settings = React.createClass({
                     type='number' 
                     value={this.state.settings[key]} 
                     onChange={(event) => {
-                        this.state.settings[key] = event.target.value;
+                        this.state.settings[key] = +event.target.value;
                         this.setState(this.state);
                     }}/>
             </div>
@@ -63,7 +63,7 @@ var Settings = React.createClass({
                     {this.renderByteArray("Default Gateway", "gateway")}
 
                     {this.renderSettingInput("Priming Cycle Timeout (ms)", "primeTimeOut")}
-                    {this.renderSettingInput("Outlet Timeout (ms)", "outletTimeout")}
+                    {this.renderSettingInput("Outlet Timeout (ms)", "outletTimeOut")}
                     {this.renderSettingInput("Pumping Timeout (ms)", "pumpingTimeOut")}
                     {this.renderSettingInput("General Timeout (ms)", "generalTimeOut")}
 
