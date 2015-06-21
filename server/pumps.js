@@ -18,9 +18,9 @@ var Q        = require( 'q' ),
     timeOuts = require( './config/pumpsettings' );
 
 var ON = 1,
-    OFF = 0;
-
-var stop = false;
+    OFF = 0,
+    pump = "",
+    stop = false;
 
 // TODO: Flow counter variable needs to be created here.
 
@@ -34,26 +34,36 @@ function inputHandler( result ){
 }
 
 /**
+ * @brief Primes system for pumping
  *
+ * Starts by opening primevalve then starts the prime system.  A timeout is set
+ * with settings found in the pumpsettings.json file.  If the timeout expires, then
+ * the system reports a prime error.
+ *
+ * Likewise a interrupt is attached to the primeSignal line.  If prime is
  * @returns {deferred.promise|*}
  */
 function startPrime(){
 
-    var deferred = Q.defer();
-    var timer;
+    var deferred = Q.defer(),
+        timer;
 
-    b.digitalWrite( settings.relays.prime1, ON );
+    if( !b.digitalWrite(settings.relays.primeOutOpen, ON) ||
+        !b.digitalWrite(settings.relays.prime, ON) ){
+        deferred.reject(new Error("Failed to start priming"));
+    }
 
-    timer = setTimeout( function(){
-        b.detachInterrupt( settings.inputs.primeSignal );
-        b.digitalWrite( settings.relays.prime1, OFF );
-        deferred.reject( new Error( "Timeout on prime" ) );
-    }, timeOuts.primeTimeOut );
+    timer = setTimeout(function(){
+        b.detachInterrupt(settings.inputs.primeSignal);
+        b.digitalWrite(settings.relays.prime, OFF);
+        b.digitalWrite(settings.relays.primeOutOpen, OFF);
+        deferred.reject(new Error( "Timeout on prime" ));
+    }, timeOuts.primeTimeOut);
 
-    b.attachInterrupt( settings.inputs.primeSignal, inputHandler, b.RISING, function(){
-        clearTimeout( timer );
-        b.detachInterrupt( settings.inputs.primeSignal );
-        b.digitalWrite( settings.relays.prime1, OFF );
+    b.attachInterrupt(settings.inputs.primeSignal, inputHandler, b.RISING, function(){
+        clearTimeout(timer);
+        b.detachInterrupt(settings.inputs.primeSignal);
+        b.digitalWrite(settings.relays.prime, OFF);
         deferred.resolve();
     });
 
@@ -65,12 +75,13 @@ function startPrime(){
  * @param outlet
  * @returns {deferred.promise|*}
  */
-function startOutlet( outlet ){
-    var deferred = Q.defer();
-    var timer;
-    var signal = ( outlet === settings.relays.pump1Outlet ) ? settings.inputs.pump1Outlet : settings.inputs.pump2Outlet;
+function startOutlet(){
+    var deferred = Q.defer(),
+        timer,
+        openValve = ( pump === "pump1" ) ? settings.relays.pump1OutOpen : settings.relays.pump2OutOpen,
+        closeValue = ( pump === "pump1" ) ? settings.relays.pump1OutClose : settings.relays.pump2OutClose;
 
-    b.digitalWrite( outlet, ON );
+    b.digitalWrite(outlet, ON);
 
     timer = setTimeout( function(){
         b.digitalWrite( outlet, OFF );
@@ -92,10 +103,11 @@ function startOutlet( outlet ){
  * @param pump
  * @returns {deferred.promise|*}
  */
-function startPump( pump ){
+function startPump(){
     var deferred = Q.defer();
     var timer;
 
+    b.digitalWrite(settings.relays.primeOutOpen, OFF);
     b.digitalWrite( pump, ON );
 
     timer = setTimeout( function(){
@@ -132,9 +144,17 @@ function endCycle(){
  *
  */
 function emergencyStop(){
+    var exec = require('child_process' ).exec,
+        shutdown = exec('shutdown -P -h now', function( err, std, stderr){
+            logger.info(std);
+            logger.error(stderr);
+            if(error != null){
+                logger.error("Error executing shutdown - " + error );
+            }
+        });
+
     endCycle();
     stop = true;
-    logger.warn( "Emergency Stop Pressed" );
 }
 
 
@@ -163,22 +183,18 @@ function emergencyStop(){
  */
 function startcycle(){
     var QUERYSTRING = "SELECT pump_used FROM pump_cycle ORDER BY pump_used DESC LIMIT 1";
-    var pump = settings.relays.pump1,               // Pump last used
-        pumpOutlet = settings.relays.pump1Outlet;   // Pump outlet valve last used
 
-    return db.query( QUERYSTRING).then( function( result ){
+    return db.query( QUERYSTRING ).then( function( result ){
         pump = result[0].pump_used;
 
         if( pump === 'pump1' || pump === null ){
             pump = settings.relays.pump2;
-            pumpOutlet = settings.relays.pump2Outlet;
         } else {
             pump = settings.relays.pump1;
-            pumpOutlet = settings.relays.pump1Outlet;
         }
 
     }, function( err ) {
-        // error in database connect
+        // error in database connection
         logger.error( "Failed to connect to database " + err );
 
     }).then( startPrime, function( err ){
@@ -187,13 +203,13 @@ function startcycle(){
     }, function( progress ){
         // TODO: Add emergency stop
 
-    }).then( startOutlet( pumpOutlet ), function( err ){
+    }).then( startOutlet, function( err ){
         endCycle();
         logger.error( "Error: " + err );
     }, function( progress ){
         // TODO: Add emergency stop
 
-    }).then( startPump( pump ), function( err ){
+    }).then( startPump, function( err ){
         endCycle();
         logger.error( "Error: " + err);
     }, function( progress ){
@@ -224,22 +240,27 @@ module.exports = {
             var errorFlag = false;
             stop = false;
 
-            // TODO: Pin needed for pressure switch
-            b.attachInterrupt( settings.inputs.emergencyBtn, inputHandler, b.RISING, emergencyStop );
-
+            // Setup all relays as outputs
             _.forEach( settings.relays, function( pin ){
-                if( b.pinMode( pin, b.OUTPUT ) === false ){
+                if( b.pinMode( pin, b.OUTPUT, 7, 'pulldown' ) === false ){
                     errorFlag = true;
                 }
             });
 
+            // Setup all opto-isolated pins as inputs
             _.forEach( settings.inputs, function( pin ){
-                if( b.pinMode( pin, b.INPUT ) === false ){
+                if( b.pinMode( pin, b.INPUT, 7, 'pullup' ) === false ){
                     errorFlag = true;
                 }
             });
 
-            if( errorFlag === true ){
+            // Interrupt used for emergency button presses.
+            if( !b.attachInterrupt( settings.inputs.emergencyBtn, true, b.FALLING, emergencyStop ) ){
+                errorFlag = true;
+            }
+
+            // If all pin initialization assignments were successful then no error is triggered
+            if( errorFlag === false ){
                 logger.info( "pump pins initialized" );
             } else {
                 logger.error( "pin assignment failed" );

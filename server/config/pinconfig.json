@@ -1,22 +1,22 @@
 {
     "relays": {
         "pump1":            "P9_12",
-        "pump1Outlet":      "P9_15",
-        "pump2":            "P9_23",
-        "pump2Outlet":      "P8_9",
-        "prime1":           "P9_27",
-        "UNUSEDRELAY6":     "P9_41",
-        "UNUSEDRELAY7":     "P8_7",
-        "UNUSEDRELAY8":     "P9_42"
+        "pump2":            "P9_15",
+        "pump1OutOpen":     "P9_23",
+        "pump1OutClose":    "P8_9",
+        "pump2OutOpen":     "P9_27",
+        "pump2OutClose":    "P9_41",
+        "primeOutOpen":     "P8_7",
+        "prime":            "P9_42"
     },
     "inputs": {
-        "pump1OutletSignal":"P8_11",
-        "pump2OutletSignal":"P8_12",
-        "primeSignal":      "P8_14",
-        "tankSignal":       "P8_15",
-        "flowSignal":       "P8_16",
+        "pump1OutOpened":   "P8_11",
+        "pump1OutClosed":   "P8_12",
+        "pump2OutOpened":   "P8_14",
+        "pump2OutClosed":   "P8_15",
+        "pressureSignal":   "P8_16",
         "emergencyBtn":     "P8_17",
-        "UNUSED7":          "P8_17",
-        "UNUSED8":          "P8_26"
+        "tankFullSignal":   "P8_17",
+        "primeSignal":      "P8_26"
     }
 }
