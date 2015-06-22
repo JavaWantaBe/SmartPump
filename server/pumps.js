@@ -14,13 +14,14 @@ var Q        = require( 'q' ),
     _        = require( 'lodash' ),
     db       = require( './database' ),
     logger   = require( './logger' )( 'pumps' ),
-    settings = require( './config/pinconfig'), // Use this instead of fs for JSON objects
+    settings = require( './settings' ), // Use this instead of fs for JSON objects
     timeOuts = require( './config/pumpsettings' );
 
 var ON = 1,
     OFF = 0,
     pump = "",
-    stop = false;
+    stop = false,
+    _initError = false;
 
 // TODO: Flow counter variable needs to be created here.
 
@@ -221,6 +222,10 @@ function startcycle(){
     });
 }
 
+function _pinStatus( value ) {
+    if( value === false ) _initError = true;
+}
+
 /**
  *
  * @type {{init: init, start: startcycle}}
@@ -237,35 +242,26 @@ function startcycle(){
  */
 module.exports = {
     init:function(){
-            var errorFlag = false;
+            var pins = settings.getPinSettings();
             stop = false;
 
             // Setup all relays as outputs
-            _.forEach( settings.relays, function( pin ){
-                if( b.pinMode( pin, b.OUTPUT, 7, 'pulldown' ) === false ){
-                    errorFlag = true;
-                }
+            _.forEach( pins.relays, function( pin ){
+                b.pinMode( pin.pin, b.OUTPUT, 7, 'pulldown', 'fast', _pinStatus );
             });
 
             // Setup all opto-isolated pins as inputs
-            _.forEach( settings.inputs, function( pin ){
-                if( b.pinMode( pin, b.INPUT, 7, 'pullup' ) === false ){
-                    errorFlag = true;
-                }
+            _.forEach( pins.inputs, function( pin ){
+                b.pinMode( pin.pin, b.INPUT, 7, 'pullup', 'fast', _pinStatus );
             });
 
-            // Interrupt used for emergency button presses.
-            if( !b.attachInterrupt( settings.inputs.emergencyBtn, true, b.FALLING, emergencyStop ) ){
-                errorFlag = true;
+            if( _initError ) {
+                logger.error( "initialization error");
+                throw new Error( "Initialization failed" );
             }
 
-            // If all pin initialization assignments were successful then no error is triggered
-            if( errorFlag === false ){
-                logger.info( "pump pins initialized" );
-            } else {
-                logger.error( "pin assignment failed" );
-                throw new Error( "Pin assignment failed" );
-            }
+            // Interrupt used for emergency button presses.
+            b.attachInterrupt( pins.inputs.input1.pin, true, b.FALLING, emergencyStop );
         },
     start: startcycle
 };

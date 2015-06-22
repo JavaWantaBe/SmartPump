@@ -1,22 +1,106 @@
 {
+    "input_pins": {
+        "1": "P8_15",
+        "2": "P8_11",
+        "3": "P8_14",
+        "4": "P8_12",
+        "5": "P8_16",
+        "6": "P8_17",
+        "7": "P8_18",
+        "8": "P8_26"
+    },
+    "output_pins": {
+        "1": "P9_12",
+        "2": "P9_15",
+        "3": "P9_23",
+        "4": "P8_9",
+        "5": "P9_27",
+        "6": "P9_41",
+        "7": "P8_7",
+        "8": "P9_42"
+    },
     "relays": {
-        "pump1":            "P9_12",
-        "pump2":            "P9_15",
-        "pump1OutOpen":     "P9_23",
-        "pump1OutClose":    "P8_9",
-        "pump2OutOpen":     "P9_27",
-        "pump2OutClose":    "P9_41",
-        "primeOutOpen":     "P8_7",
-        "prime":            "P9_42"
+        "output1": {
+            "label": "pump1",
+            "pin": "P9_12",
+            "active": "high"
+        },
+        "output2": {
+            "label": "pump1open",
+            "pin": "P9_15",
+            "active": "high"
+        },
+        "output3": {
+            "label": "pump1close",
+            "pin": "P9_23",
+            "active": "high"
+        },
+        "output4": {
+            "label": "prime",
+            "pin": "P8_9",
+            "active": "high"
+        },
+        "output5": {
+            "label": "pump2",
+            "pin": "P9_27",
+            "active": "high"
+        },
+        "output6": {
+            "label": "pump2close",
+            "pin": "P9_41",
+            "active": "high"
+        },
+        "output7": {
+            "label": "pump2open",
+            "pin": "P8_7",
+            "active": "high"
+        },
+        "output8": {
+            "label": "primeopen",
+            "pin": "P9_42",
+            "active": "high"
+        }
     },
     "inputs": {
-        "pump1OutOpened":   "P8_11",
-        "pump1OutClosed":   "P8_12",
-        "pump2OutOpened":   "P8_14",
-        "pump2OutClosed":   "P8_15",
-        "pressureSignal":   "P8_16",
-        "emergencyBtn":     "P8_17",
-        "tankFullSignal":   "P8_17",
-        "primeSignal":      "P8_26"
+        "input1": {
+            "label": "emergency",
+            "pin": "P8_15",
+            "active": "low"
+        },
+        "input2": {
+            "label": "pressure",
+            "pin": "P8_11",
+            "active": "low"
+        },
+        "input3": {
+            "label": "prime",
+            "pin": "P8_14",
+            "active": "low"
+        },
+        "input4": {
+            "label": "tankfull",
+            "pin": "P8_12",
+            "active": "high"
+        },
+        "input5": {
+            "label": "valve1open",
+            "pin": "P8_16",
+            "active": "low"
+        },
+        "input6": {
+            "label": "valve1closed",
+            "pin": "P8_17",
+            "active": "low"
+        },
+        "input7": {
+            "label": "valve2open",
+            "pin": "P8_18",
+            "active": "low"
+        },
+        "input8": {
+            "label": "valve2closed",
+            "pin": "P8_26",
+            "active": "low"
+        }
     }
 }
