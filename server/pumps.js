@@ -118,8 +118,8 @@ function endCycle() {
 
         This way, if any calls to digitalWrite fail, we can catch the error
     */
-    return Q.all(_.map(settings.relays, function(pin) {
-        return digitalWrite(pin, OFF);
+    return Q.all(_.map( settings.relays, function(relay) {
+        return digitalWrite(relay.pin, OFF);
     }));
 }
 
