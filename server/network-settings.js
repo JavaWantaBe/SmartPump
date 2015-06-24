@@ -6,10 +6,12 @@
 
 var Q = require("q");
 var fs = require("fs");
+var path = require("path");
 var b = require("bonescript");
 var exec = Q.nfbind(require("child_process").exec);
+var writeFile = Q.nfbind(fs.writeFile);
 
-var _interfaceDir = __dirname + "/../interfaces";
+var _interfaceDir = path.normalize(__dirname + "/../interfaces");
 var _scriptRead   = "awk -f " + __dirname + "/network-scripts/readInterfaces.awk " + _interfaceDir + " device=eth0";
 var _scriptWrite  = "awk -f " + __dirname + "/network-scripts/changeInterface.awk " + _interfaceDir + " device=eth0";
 
@@ -60,9 +62,14 @@ function setSettings(newSettings) {
 }
 
 function writeSettings(newSettings) {
-    return set_ip(newSettings.ip)
-        .then(set_sub.bind(null, newSettings.subnet))
-        .then(set_gw.bind(null, newSettings.gateway));
+    console.log("Writing settings:",newSettings);
+    return exec(_scriptWrite + 
+        " address=" + newSettings.ip.join(".") + 
+        " netmask=" + newSettings.subnet.join(".") +
+        " gateway=" + newSettings.gateway.join("."))
+    .then(function(result) {
+        return writeFile(_interfaceDir, result.toString());
+    });
 }
 
 /**
@@ -121,7 +128,7 @@ function get_dhcp() {
  * @param address
  */
 function set_ip(address) {
-    return exec(_scriptWrite + "address=" + address.join("."));
+    return exec(_scriptWrite + " address=" + address.join("."));
 }
 
 /**
@@ -129,7 +136,7 @@ function set_ip(address) {
  * @param address
  */
 function set_sub(address) {
-    return exec(_scriptWrite + "netmask=" + address.join("."));
+    return exec(_scriptWrite + " netmask=" + address.join("."));
 }
 
 /**
@@ -137,7 +144,7 @@ function set_sub(address) {
  * @param address
  */
 function set_gw(address) {
-    return exec(_scriptWrite + "gateway=" + address.join("."));
+    return exec(_scriptWrite + " gateway=" + address.join("."));
 }
 
 /**
@@ -146,7 +153,7 @@ function set_gw(address) {
  * @param settings
  */
 function set_dhcp(dhcp_mode) {
-    return exec(_scriptWrite + "mode=" + (dhcp_mode ? "dhcp" : "static"));
+    return exec(_scriptWrite + " mode=" + (dhcp_mode ? "dhcp" : "static"));
 }
 
 /**

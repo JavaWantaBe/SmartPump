@@ -1,5 +1,3 @@
-# This is a test interfaces file for Smartpump development
-
 # This file describes the network interfaces available on your system
 # and how to activate them. For more information, see interfaces(5).
 
@@ -11,7 +9,8 @@ iface lo inet loopback
 auto eth0
 
 iface eth0 inet static
-    address 192.168.1.45
-    netmask 255.255.255.0
-    gateway 192.168.1.1
+    address  185.168.1.45
+    netmask  255.255.255.0
+    gateway  192.168.1.1
 
+,

@@ -38,14 +38,14 @@ function start() {
 				return Q.promise(function(resolve, reject) {
 					currentJob = new Job(function() {
 						logger.info("Starting pumps at '" + (new Date()) + "'");
-						setTimeout(resolve, 3000);
+						setTimeout(resolve.bind(null, false), 3000);
 					})
-						.on("canceled", resolve)
+						.on("canceled", resolve.bind(null, true))
 						.on("error", reject);
 
 					currentJob.schedule(date);
-				}).then(function() {
-					logger.info("Pump cycle finished at '" + (new Date()) + "'")
+				}).then(function(canceled) {
+					logger.info("Pump cycle " + (canceled ? "canceled" : "finished") + " at '" + (new Date()) + "'")
 				});
 			} else {
 				var now;
