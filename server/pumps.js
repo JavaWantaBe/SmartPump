@@ -10,10 +10,6 @@ var Q = require('q'),
     settings = require('./config/pinconfig'), // Use this instead of fs for JSON objects
     timeOuts = require('./config/pumpsettings');
 
-
-var ON = b.LOW,
-    OFF = b.HIGH;
-
 function _getPin(pins, label) {
     return _.filter(pins, function(input) {
         return input.label === label;
@@ -57,7 +53,6 @@ function _timedInterrupt(pin, mode, timeoutMS) {
             rejected log
         */
         return Q.promise(function(resolve, reject) {
-            console.log("Detached :" + pin);
             b.detachInterrupt(pin) ? resolve("detached") : reject(new Error("not detached from pin - " + pin));
         });
 
@@ -82,12 +77,12 @@ function onceInterrupt(pin, mode) {
 
 function startPrime() {
 
-    return pinWrite(_getPin(settings.relays, "prime1"), b.LOW)
+    return pinWrite(_getPin(settings.relays, "prime1"), b.HIGH)
         .then(function() {
-            return timedInterrupt(_getPin(settings.inputs, "primesignal"), b.FALLING, timeOuts.primeTimeOut);
+            return timedInterrupt(_getPin(settings.inputs, "prime"), b.FALLING, timeOuts.primeTimeOut);
         })
         .finally(function() {
-            return pinWrite(_getPin(settings.relays, "prime1"), b.HIGH);
+            return pinWrite(_getPin(settings.relays, "prime1"), b.LOW);
         });
 }
 
@@ -119,7 +114,7 @@ function endCycle() {
         This way, if any calls to digitalWrite fail, we can catch the error
     */
     return Q.all(_.map( settings.relays, function(relay) {
-        return digitalWrite(relay.pin, OFF);
+        return digitalWrite(relay.pin, b.LOW);
     }));
 }
 
