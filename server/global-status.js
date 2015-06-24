@@ -3,23 +3,29 @@
  */
 "use strict";
 
-var b = require( 'bonescript' );
+var b = require("bonescript");
+var Q = require("q");
 
 var _onBeagleBoard = false;
 
 
-function printBoard( values ){
-    if( values.version ){
-        _onBeagleBoard = true;
-    }
-}
-
-
 module.exports = {
-    statusInit : function( ){
-        b.getPlatform( printBoard );
+	/*
+		I wrapped this function in a promise since it is asynchronous,
+		and there was no way to wait on this function before.
+
+		This function will be called and resolved before the database is initialized
+	*/
+    init: function() {
+    	return Q.promise(function(resolve) {
+        	b.getPlatform(function(platform) {
+        		_onBeagleBoard = !!platform.version;
+        		resolve();
+        	});
+    	});
     },
-    onBeagleBone: function(){
+
+    onBeagleBone: function() {
         return _onBeagleBoard;
     }
 };

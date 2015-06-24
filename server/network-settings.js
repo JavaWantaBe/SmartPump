@@ -4,14 +4,14 @@
 
 "use strict";
 
-var Q = require( 'q' ),
-   fs = require( 'fs' ),
-    b = require( 'bonescript' ),
-    exec = Q.nfbind(require('child_process').exec);
+var Q = require("q");
+var fs = require("fs");
+var b = require("bonescript");
+var exec = Q.nfbind(require("child_process").exec);
 
-var _interfaceDir = __dirname + "/config/interfaces",
-    _scriptRead   = "awk -f " + __dirname + "/networkscripts/readInterfaces.awk " + _interfaceDir + " device=eth0",
-    _scriptWrite  = "awk -f " + __dirname + "/networkscripts/changeInterface.awk " + _interfaceDir + " device=eth0";
+var _interfaceDir = __dirname + "/../interfaces";
+var _scriptRead   = "awk -f " + __dirname + "/network-scripts/readInterfaces.awk " + _interfaceDir + " device=eth0";
+var _scriptWrite  = "awk -f " + __dirname + "/network-scripts/changeInterface.awk " + _interfaceDir + " device=eth0";
 
 var cachedSettings = null;
 
@@ -121,7 +121,7 @@ function get_dhcp() {
  * @param address
  */
 function set_ip(address) {
-    return exec(_scriptWrite + "gateway=" + address.join("."));
+    return exec(_scriptWrite + "address=" + address.join("."));
 }
 
 /**

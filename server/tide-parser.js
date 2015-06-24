@@ -12,23 +12,21 @@
             Takes raw unparsed tide data and returns an array of TideEntry instances (see: server/tide-entry.js)
 */
 
-var _           = require("lodash"), // Utility library: http://lodash.com/docs
-    moment      = require("moment"), // time string parsing library: http://momentjs.com/docs/
-    Entry       = require("./tide-entry"),
-    headers = [
-        "station_id",
-        "sensor_id",
-        '"latitude (degree)"',
-        '"longitude (degree)"',
-        "date_time",
-        '"sea_surface_height_amplitude_due_to_equilibrium_ocean_tide (m)"',
-        "type",
-        "datum_id",
-        '"vertical_position (m)"'
-    ],
-    expectedHeader = "station_id,sensor_id,\"latitude (degree)\",\"longitude (degree)\",date_time,\"sea_surface_height_amplitude_due_to_equilibrium_ocean_tide (m)\",type,datum_id,\"vertical_position (m)\"",
-    headerCount = headers.length,
-    entries = [];
+var _           = require("lodash"); // Utility library: http://lodash.com/docs
+var headers = [
+    "station_id",
+    "sensor_id",
+    '"latitude (degree)"',
+    '"longitude (degree)"',
+    "date_time",
+    '"sea_surface_height_amplitude_due_to_equilibrium_ocean_tide (m)"',
+    "type",
+    "datum_id",
+    '"vertical_position (m)"'
+];
+var expectedHeader = "station_id,sensor_id,\"latitude (degree)\",\"longitude (degree)\",date_time,\"sea_surface_height_amplitude_due_to_equilibrium_ocean_tide (m)\",type,datum_id,\"vertical_position (m)\"";
+var headerCount = headers.length;
+var entries = [];
 
 
 // Private function
@@ -45,11 +43,11 @@ function validateLine(line) {
 
 // Private function for parsing individual tide lines
 function parseLine(line) {
-    var fields,
-        rawEntry, // object of unparsed values
-        entry, // after parsing individual parts
-        values,
-        time;
+    var fields;
+    var rawEntry; // object of unparsed values
+    var entry; // after parsing individual parts
+    var values;
+    var time;
 
     if(!validateLine(line)) {
         return null;
@@ -69,39 +67,35 @@ function parseLine(line) {
         rawLine: line
     };
 
-    // parsed tide entry
-    entry = {
-        time:               moment(rawEntry.time, "YYYY-MM-DD-HH:mm:ss-"),
-        high:               rawEntry.type === "H",
-
-        stationId:          rawEntry.stationId,
-        sensorId:           rawEntry.sensorId,
-        datumId:            rawEntry.datumId,
-
-        seaSurfaceHeight:   +(rawEntry.seaSurfaceHeight), // the plus operator will parse a string into a number
-        latitude:           +(rawEntry.latitude),
-        longitude:          +(rawEntry.longitude),
-        verticalPosition:   +(rawEntry.verticalPosition),
-
-        rawEntry:           rawEntry
+    return {
+        time: rawEntry.time,
+        high: rawEntry.type === "H"
     };
-
-    return new Entry(entry);
 }
 
 
-// Splits the tide string by line then parses the lines individually
-function parseTideData(data) {
-    var lines = data.split("\n"),
-        headers = lines.shift();
+/*
+    Arguments:
+        data:String - Raw tide data from NOAA
 
-    if(!validateHeaders(headers)) {
+    returns:
+        entries:[Date] - An array of high tide dates (uses native javascript date objects)
+*/
+function parseTideData(data) {
+    var lines = data.split("\n");
+    var headers = lines.shift(); // strip the table header line off
+
+    if(!validateHeaders(headers)) { // make sure the headers look valid
         return null;
     }
 
-    return _.compact(_.map(lines, parseLine)).filter(function(entry) {
-        return entry.high;
-    }); // compact removes falsy values
+    return _.compact(_.map(lines, parseLine))
+        .filter(function(entry) {
+            return entry.high;
+        })
+        .map(function(entry) {
+            return new Date(entry.time);
+        });
 }
 
 module.exports = {

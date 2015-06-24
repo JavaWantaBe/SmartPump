@@ -20,7 +20,7 @@ pm2.connect(function() {
         script: __dirname + "/smartpump.js"
     }, function(err, apps) {
         if(err) {
-            console.log(err.toString());
+            console.log("PM2 failed to start script: " + err);
         }
         pm2.disconnect();
     });

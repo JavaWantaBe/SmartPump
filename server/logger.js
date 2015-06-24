@@ -75,29 +75,29 @@ var config = {
  *
  * @type {exports}
  */
-var winston = require( 'winston' ),     // Main logger
-    Q       = require( 'q' ),           // Promise handler
-    db      = require( 'mysql' ),       // Database module for query
-    _       = require( 'lodash' ),
-    loggers = {
-        // All logged data will also be printed to the global log
-        global: new winston.Logger({
-            transports: [
-                new( winston.transports.Console )( { colorize: 'true', timestamp: 'true' } )
-            ],
-                levels: config.globalLevels,
-                colors: config.colors
-        })
-    },
-    globalLog = loggers.global;
-
-var transport = require( 'winston-mysql-transport' ).Mysql;
+var winston = require("winston");     // Main logger
+var Q = require("q");           // Promise handler
+var db = require("mysql");       // Database module for query
+var dbConfig = require("./config-manager").getConfig().database;
+var _ = require("lodash");
+var loggers = {
+    // All logged data will also be printed to the global log
+    global: new winston.Logger({
+        transports: [
+            new(winston.transports.Console)({ colorize: "true", timestamp: "true" })
+        ],
+            levels: config.globalLevels,
+            colors: config.colors
+    })
+};
+var globalLog = loggers.global;
+var transport = require("winston-mysql-transport").Mysql;
 
 /**
  *
  * @param moduleName
  */
-function getLog( moduleName ){
+function getLog(moduleName){
     return Q.resolve("{ 'data': '" + moduleName + " log data goes here' }");
 }
 
@@ -105,7 +105,7 @@ function getLog( moduleName ){
  *
  * @param moduleName
  */
-function getLogger( moduleName ){
+function getLogger(moduleName){
     return loggers[moduleName];
 }
 
@@ -117,13 +117,13 @@ function getLogger( moduleName ){
  * @param moduleName
  * @returns {{info: info, warn: warn, error: error, debug: debug, getLogger: getLogger, getLog: getLog}}
  */
-module.exports = function( moduleName ) {
-    var logger = loggers[ moduleName ];
+module.exports = function(moduleName) {
+    var logger = loggers[moduleName];
 
-    if( !logger ) {
-        logger = loggers[ moduleName ] = new winston.Logger({
+    if(!logger) {
+        logger = loggers[moduleName] = new winston.Logger({
             transports: [
-                new winston.transports.Mysql( require( './config/database' ) )
+                new winston.transports.Mysql(dbConfig)
             ],
             levels: config.databaseLevels
         });
@@ -132,30 +132,30 @@ module.exports = function( moduleName ) {
     return {
 
         info: function() {
-            var args = _.toArray( arguments );
-            args.unshift( moduleName + " - ");
-            globalLog.info.apply( globalLog, args );
-            return logger.info.apply( logger, args );
+            var args = _.toArray(arguments);
+            args.unshift(moduleName + " - ");
+            globalLog.info.apply(globalLog, args);
+            return logger.info.apply(logger, args);
         },
 
         warn: function() {
-            var args = _.toArray( arguments );
-            args.unshift( moduleName + " - ");
-            globalLog.warn.apply( globalLog, args );
+            var args = _.toArray(arguments);
+            args.unshift(moduleName + " - ");
+            globalLog.warn.apply(globalLog, args);
             return logger.warn.apply(logger, args);
         },
 
         error: function() {
-            var args = _.toArray( arguments );
-            args.unshift( moduleName + " - ");
+            var args = _.toArray(arguments);
+            args.unshift(moduleName + " - ");
             globalLog.error.apply(globalLog, args);
             return logger.error.apply(logger, args);
         },
 
         debug: function() {
-            var args = _.toArray( arguments );
-            args.unshift( moduleName + " - ");
-            return globalLog.debug.apply( globalLog, args );
+            var args = _.toArray(arguments);
+            args.unshift(moduleName + " - ");
+            return globalLog.debug.apply(globalLog, args);
         },
 
         getLogger: getLogger,

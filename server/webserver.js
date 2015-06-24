@@ -1,25 +1,23 @@
-"use strict";
+var _             = require("lodash");
+var Q             = require("q");
+var logger        = require("./logger")("webserver");
+var express       = require("express");
+var bodyParser    = require("body-parser");
+var cookieParser  = require("cookie-parser");
+var session       = require("express-session");
+var morgan        = require("morgan");
+var flash         = require("connect-flash");
+var passport      = require("passport");
+var LocalStrategy = require("passport-local").Strategy;
 
-var _             = require("lodash"),
-    Q             = require("q"),
-    logger        = require("./logger")("webserver"),
-    express       = require("express"),
-    bodyParser    = require("body-parser"),
-    cookieParser  = require("cookie-parser"),
-    session       = require("express-session"),
-    morgan        = require("morgan"),
-    flash         = require("connect-flash"),
-    passport      = require("passport"),
-    LocalStrategy = require("passport-local").Strategy,
-    TideEntry     = require("./tide-entry"),
-    scheduler     = require("./pump-scheduler"),
-    getUser       = require("./queries/getUser"),
-    getLogs       = require("./queries/getLogs"),
-    network       = require("./network-settings"),
-    timeout       = require("./timeout-settings"),
-    app           = express(),
-    port          = 8080,
-    staticFiles   = __dirname + "/public";
+var getUser       = require("./queries/get-user");
+var getLogs       = require("./queries/get-logs");
+var network       = require("./network-settings");
+var configManager = require("./config-manager");
+var tideManager   = require("./tide-manager");
+var app           = express();
+var port          = 8080;
+var staticFiles   = __dirname + "/../public";
 
 app.use(morgan("dev"));
 app.use(bodyParser());
@@ -43,17 +41,17 @@ function checkAuthenticated(req, res, next) {
 }
 
 function validateUser(username, password) {
+    logger.info("Login attempt with username: " + username);
     return getUser(username, password).then(function(user) {
         return !!user;
     });
 }
 
-
 function getSettings() {
     // TODO: Richard retrieve actual network info
     return network.getSettings()
         .then(function(netSettings) {
-            return _.extend({}, netSettings, timeout.getSettings());
+            return _.extend({}, netSettings, configManager.getConfig().pumpTimeouts);
         });
 }
 
@@ -63,21 +61,27 @@ function setSettings(settings) {
         subnet: settings.subnet,
         gateway: settings.gateway
     };
-    var timeoutSettings = {
+
+    var pumpTimeouts = {
         primeTimeOut: settings.primeTimeOut,
         outletTimeOut: settings.outletTimeOut,
         pumpingTimeOut: settings.pumpingTimeOut,
         generalTimeOut: settings.generalTimeOut
     };
-    network.setSettings(networkSettings);
-    timeout.setSettings(timeoutSettings);
-    return Q.resolve(settings);
+
+    return network.setSettings(networkSettings).then(function() {    
+        configManager.merge({
+            pumpTimeouts: pumpTimeouts 
+        });
+        return settings;
+    });
 }
 
 // Settings
 app.route("/settings")
     .get(checkAuthenticated, function(req, res) {
-        getSettings()
+        Q.resolve()
+            .then(getSettings)
             .then(function(settings) {
                 res.json({settings: settings});
             })                
@@ -86,8 +90,11 @@ app.route("/settings")
             })
     })
     .post(checkAuthenticated, function(req, res) {
-        setSettings(req.body.settings)
+        logger.info("User submitted new configuration:", req.body.settings);
+        Q.resolve()
+            .then(setSettings.bind(null, req.body.settings))
             .then(function(settings) {
+                logger.info("Sucessfully saved new settings to disc");
                 res.json({settings: settings});
             })
             .catch(function(error) {
@@ -95,29 +102,29 @@ app.route("/settings")
             });
     });
 
-// TODO: Move this variable somewhere more fittings
-var manualMode = false;
 function getSchedule() {
-    return scheduler.getEntries()
-        .then(function(entries) {
+    return tideManager.getTideDates()
+        .then(function(tideDates) {
             return {
-                entries: entries,
-                manualMode: manualMode
+                entries: tideDates,
+                manualMode: configManager.getConfig().manualMode
             };
-        })
+        });
 }
 
 function setSchedule(schedule) {
-    manualMode = schedule.manualMode;
-    return scheduler
-        .setEntries(schedule.entries.map(function(time) {
-            return TideEntry.fromDBModel({
-                time: time
-            });
-        }))
-        .then(function() {
-            return schedule;
+    var manualMode = !!schedule.manualMode;
+    var entries = schedule.entries.map(function(dateString) {
+        return new Date(dateString);
+    });
+
+    if(manualMode !== configManager.getConfig().manualMode) {
+        configManager.merge({
+            manualMode: manualMode
         });
+    }
+
+    return tideManager.setTideDates(entries).then(Q.resolve(entries));
 }
 
 // Schedule
@@ -196,6 +203,6 @@ passport.use("local-login", strategy);
 module.exports = {
     init: function() {
         app.listen(port);
-        logger.debug( "Listening on port: " + port );
+        logger.info("Listening on port: " + port);
     }
 };

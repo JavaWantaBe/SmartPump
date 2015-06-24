@@ -9,53 +9,46 @@ var gulp        = require("gulp"),                // Task runner
     port        = 8888;                           // For test server
 
 var bundler = _.once(function() {
-    var Browserify = require("browserify"),
-        watchify   = require("watchify");
+    var Browserify = require("browserify");
 
-    return watchify(Browserify(_.extend({
+    return Browserify({
         paths: ["./node_modules", "./client/javascript"],
         debug: true
-    }, watchify.args)))
-    .transform(require("6to5ify"))
+    })
+    .transform(require("babelify"))
     .transform('brfs')
     .add("./client/javascript/app.js")
-    .on('update', bundle)
-    .on("time", function(time) {
-        gutil.log("Finished building (" + time + " ms)");
-    })
     .on("error", function(error) {
         console.log("Bundler error: " + error);
     });
 });
 
-function bundle() {
+
+
+gulp.task("javascript", function() {
     return bundler()
         .bundle()
         .pipe(source("app.js"))
-        .pipe(gulp.dest("server/public"));
-}
-
-gulp.task("javascript", bundle);
-
-//gulp.task("javascript", bundle);
+        .pipe(gulp.dest("public"));
+});
 
 // Compile scss files
 gulp.task("styles", function() {
     var sass = require("gulp-ruby-sass");
     return sass("client/styles/styles.scss", {style: "compressed", require: ["susy"]})
-        .pipe(gulp.dest("server/public"));
+        .pipe(gulp.dest("public"));
 });
 
 // Copy source html file
 gulp.task("html", function() {
     return gulp.src("client/index.html")
-        .pipe(gulp.dest("server/public"));
+        .pipe(gulp.dest("public"));
 });
 
 // Copy static assets
 gulp.task("statics", function() {
     return gulp.src("client/statics/**/*")
-        .pipe(gulp.dest("server/public"));
+        .pipe(gulp.dest("public"));
 });
 
 // Build web version
@@ -65,6 +58,7 @@ gulp.task("build", ["javascript", "styles", "html", "statics"]);
 gulp.task("watch", ["build"], function() {
     gulp.watch("client/styles/**/*.scss", ["styles"]);
     gulp.watch("client/index.html", ["html"]);
+    gulp.watch(["client/javascript/**/*.js", "client/javascript/**/*.json"], ["javascript"]);
 });
 
 gulp.task("default", ["watch"]);

@@ -11,42 +11,60 @@
  * @brief Required modules for system startup
  * @type {exports}
  */
-var logger    = require("./logger")("index"),
-    webserver = require("./webserver"),
-    scheduler = require("./pump-scheduler"),
-    db        = require("./database"),
-    pumps     = require("./pumps"),
-    Q         = require( 'q' ),
-    status    = require("./global-status");
+var logger = require("./logger")("index");
+var webserver = require("./webserver");
+var configManager = require("./config-manager");
+var scheduler = require("./pump-scheduler");
+var db = require("./database");
+var pumps = require("./pumps");
+var Q = require("q");
+var status = require("./global-status");
 
+function log(type, message) {
+    return function() {
+        logger[type](message);
+    };
+}
 
-status.statusInit(); // Initializes the systems global variables and checks if installed on a beaglebone
-
-
-db.connect().then(
-    function() {
-        logger.info( "Successfully connected to mysql database" );
-
-        if( status.onBeagleBone() ){
-            logger.debug("Found beaglebone");
-            
-            try{
-                pumps.init();
-            } catch( e ){
-                logger.error("Fatal Error: " + e);
-            }
-        } else {
-            logger.debug("Not a beaglebone platform, not initializing pumps");
-        }
-
-        return scheduler.init();
-    },
-    function(err) {
-        logger.error("Fatal - " + err );
-        return Q.reject();
+function initializePumps() {
+    if(status.onBeagleBone()) {
+        logger.info("Beagle bone detected. Initializing pumps");
+        return pumps.init()
+            .then(log("info", "Successfully initialized pumps"));
+    } else {
+        logger.info("Beagle bone not found. Skipping pump initialization");
     }
-).then( function(){
-    return webserver.init();
-}).catch(function( err ){
-    logger.debug( "Error: " + err );
-});
+}
+
+function fatalErrorHandler(error) {
+    logger.error("FATAL " + error);
+}
+
+Q.resolve()
+    .then(status.init)
+    .then(log("info", "Beagle bone status determined"))
+    .then(db.connect)
+    .then(log("info", "Successfully connected to mysql server"))
+    .then(initializePumps)
+    .then(webserver.init)
+    .then(log("info", "Sucessfully initialized webserver"))
+    .then(function() {
+        function run() {
+            return scheduler.start().then(function() {
+                // setTimeout will allow the stack to unwind before `run`
+                // is called again, so we can avoid stackoverflows from recursion
+                setTimeout(run, 0);
+            }).catch(fatalErrorHandler);
+        }
+        
+        run();
+        configManager.on("change", function() {
+            logger.info("Configuration changed. Restarting scheduler");
+            scheduler.stop();
+        });
+
+        //setTimeout(function() {
+        //    configManager.merge({});
+        //}, 3000);
+    })
+    .catch(fatalErrorHandler);

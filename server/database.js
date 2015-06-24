@@ -9,12 +9,13 @@
  */
 
 
-var _       = require("lodash"),
-    Q       = require("q"),
-    mysql   = require("mysql"),
-    logger  = require( './logger')( 'database' ),
-    connection,
-    connected;
+var _ = require("lodash");
+var Q = require("q");
+var mysql = require("mysql");
+var logger = require("./logger")("database");
+var config = require("./config-manager").getConfig().database;
+var connection;
+var connected;
 
 /**
  * @brief Connects to the MySQL database
@@ -24,7 +25,7 @@ var _       = require("lodash"),
  * @param options
  * @returns {deferred.promise|*}
  */
-function connect(options) {
+function connect() {
     var deferred = Q.defer();
 
     if(connected) {
@@ -32,13 +33,11 @@ function connect(options) {
         return deferred.promise;
     }
 
-    options = options || require("./config/database");
-
-    connection = mysql.createConnection(options);
+    connection = mysql.createConnection(config);
 
     connection.connect(function(err) {
         if(err) {
-            logger.error( "Could not connect to database" );
+            logger.error("Could not connect to database");
             deferred.reject(err);
         }
         else {
@@ -58,14 +57,14 @@ function disconnect() {
     var deferred = Q.defer();
 
     connection.end(function(err) {
+        connected = false;
         if(err) {
-            logger.error( "Could not disconnect from database" );
+            logger.error("Could not disconnect from database");
             deferred.reject(err);
         }
         else {
             deferred.resolve();
         }
-        connected = false;
     });
 
     return deferred.promise;

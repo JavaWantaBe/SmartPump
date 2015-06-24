@@ -30,77 +30,66 @@
  *      "unit=Meters";
  */
 
-var _           = require("lodash"),
-    moment      = require("moment"),
-    Q           = require("q"),
-    tideParser  = require("./tide-parser"),
-    get         = require("./get");
+var _ = require("lodash");
+var logger = require("./logger")("tide-retriever");
+var tideParser = require("./tide-parser");
+var http = require("http");
+var config = require("./config-manager").getConfig().NOAARequest;
+var requestURLBase = "http://opendap.co-ops.nos.noaa.gov/ioos-dif-sos/SOS?";
+var isoStringMSRegex = /\.\d\d\dZ$/; // needed to remove milliseconds from date#toISOString
+var requestTimeout = 10000;
 
-// Default GET request key/values
-var defaultParams = {
-        service: "SOS",
-        request: "GetObservation",
-        version: "1.0.0",
-        observedProperty: "sea_surface_height_amplitude_due_to_equilibrium_ocean_tide",
-        offering: "urn:ioos:station:NOAA.NOS.CO-OPS:9432780",
-        responseFormat: "text%2Fcsv",
-        eventTime: null,                //"2000-00-00T00:00:00Z/2000-00-00T00:00:00Z",
-        result: "VerticalDatum%3D%3Durn:ioos:def:datum:noaa::MLLW",
-        dataType: "HighLowTidePredictions",
-        unit: "Meters"
-    },
-    requestURL = "http://opendap.co-ops.nos.noaa.gov/ioos-dif-sos/SOS?",
-    eventTimeFormat = "YYYY-MM-DDTHH:mm:ss";
+function get(url) {
+    return new Promise(function(resolve, reject) {
+        return http.get(url, function(res) {
+            var buffer = "";
+            res.on("data", function(chunk) {
+                buffer += chunk;
+            });
+
+            res.on("end", function() {
+                resolve(buffer);
+            });
+        }).on("error", reject);
+    });
+}
 
 // Generates the "eventTime" parameter for the get request
-// Takes two moment.js instances to define a time range
+// Takes two javascript dates
 // Return value should be a string formatted like: "2000-00-00T00:00:00Z/2000-00-00T00:00:00Z"
 function getEventTime(from, too) {
-    return from.format(eventTimeFormat) + "Z/" + too.format(eventTimeFormat) + "Z";
+    return from.toISOString().replace(isoStringMSRegex, "Z") + "/" + too.toISOString().replace(isoStringMSRegex, "Z");
 }
 
 // Generates the request URL for tide data between two dates
-// `params` object can be optionally passed to override any of the defaults in `defaultParams`
-function getRequestURL(from, too, params) {
-    var requestString = requestURL,
-        eventTime;
-
-    params = _.defaults(params || {}, defaultParams);
-
-    _.each( defaultParams, function( defaultParam, key, index ) {
+// see _config.json "NOAARequest" for NOAA settings used in request
+function getRequestURL(from, too) {
+    return _.reduce(config, function(requestURL, value, key, index) {
         if(index) {
-            requestString += "&";
+            requestURL += "&";
         }
         if(key === "eventTime") {
-            eventTime = getEventTime( from, too );
-            requestString += key + "=" + eventTime;
+            return requestURL + key + "=" + getEventTime(from, too);
         }
         else {
-            requestString += key + "=" + (params[key] || defaultParam);
+            return requestURL + key + "=" + value;
         }
-    });
-
-    return requestString;
+    }, requestURLBase);
 }
 
 // Requests tide entries from NOAA between two dates
-// Dates should be Moment instances
-// Returns a promise that resolves the retrieved tide entries as TideEntry instances (see server/tide-entry.js)
-function getTideEntries(from, too, params) {
-    var deferred = Q.defer();
-
-    get( getRequestURL( from, too, params ) ).then(
-        function( data ) {
-            deferred.resolve( tideParser.parse( data ) );
-        },
-        function(err) {
-            deferred.reject(err);
-        }
-    );
-
-    return deferred.promise;
+// Dates should be javascript date objects
+// Returns a promise that resolves the retrieved tide entries as an array of javascript dates
+function fetchTideDates(from, too) {
+    var url = getRequestURL(from, too)
+    logger.info("Requesting: '" + url + "'");
+    return get(url)
+        .then(tideParser.parse)
+        .catch(function(error) {
+            return Promise.reject(new Error("Failed to fetch tide data from NOAA's servers: " + error.message));
+        });
 }
 
 module.exports = {
-    get: getTideEntries
+    fetchTideDates: fetchTideDates
 };
