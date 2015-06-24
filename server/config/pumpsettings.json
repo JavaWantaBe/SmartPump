@@ -1,6 +1,7 @@
 {
-"primeTimeOut": 70025,
-"outletTimeOut": 9991,
-"pumpingTimeOut": 200008,
-"generalTimeOut": 4996
+    "primeTimeOut": 70025,
+    "outletTimeOut": 16000,
+    "pumpingTimeOut": 200008,
+    "generalTimeOut": 4996,
+    "valveTimeout": 15000
 }

@@ -1,62 +1,42 @@
 {
-    "input_pins": {
-        "1": "P8_15",
-        "2": "P8_11",
-        "3": "P8_14",
-        "4": "P8_12",
-        "5": "P8_16",
-        "6": "P8_17",
-        "7": "P8_18",
-        "8": "P8_26"
-    },
-    "output_pins": {
-        "1": "P9_12",
-        "2": "P9_15",
-        "3": "P9_23",
-        "4": "P8_9",
-        "5": "P9_27",
-        "6": "P9_41",
-        "7": "P8_7",
-        "8": "P9_42"
-    },
     "relays": {
-        "output1": {
+        "relay1": {
             "label": "pump1",
             "pin": "P9_12",
             "active": "high"
         },
-        "output2": {
-            "label": "pump1open",
+        "relay2": {
+            "label": "valve1open",
             "pin": "P9_15",
             "active": "high"
         },
-        "output3": {
-            "label": "pump1close",
+        "relay3": {
+            "label": "valve1close",
             "pin": "P9_23",
             "active": "high"
         },
-        "output4": {
+        "relay4": {
             "label": "prime",
             "pin": "P8_9",
             "active": "high"
         },
-        "output5": {
+        "relay5": {
             "label": "pump2",
             "pin": "P9_27",
             "active": "high"
         },
-        "output6": {
-            "label": "pump2close",
+        "relay6": {
+            "label": "valve2close",
             "pin": "P9_41",
             "active": "high"
         },
-        "output7": {
-            "label": "pump2open",
+        "relay7": {
+            "label": "valve2open",
             "pin": "P8_7",
             "active": "high"
         },
-        "output8": {
-            "label": "primeopen",
+        "relay8": {
+            "label": "spare",
             "pin": "P9_42",
             "active": "high"
         }
