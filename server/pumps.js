@@ -1,5 +1,14 @@
 "use-strict";
 
+/**
+ * @file pumps.js
+ * 
+ * @brief Logic for pumping systems
+ * 
+ * 
+ * 
+ * 
+ */
 
 
 var Q = require('q'),
@@ -10,6 +19,14 @@ var Q = require('q'),
     settings = require('./config/pinconfig'), // Use this instead of fs for JSON objects
     timeOuts = require('./config/pumpsettings');
 
+/**
+ * @brief Returns pin of assigned input or output based on label 
+ * 
+ * @param pins - settings.relays / settings.inputs
+ * @param label - label assigned to input or output
+ * 
+ * @retval value of pin
+ */
 function _getPin(pins, label) {
     return _.filter(pins, function(input) {
         return input.label === label;
@@ -27,12 +44,12 @@ function _timedInterrupt(pin, mode, timeoutMS) {
         race returns a promise that is resolved/rejected
         when the first promise in the passed array resolves/rejects
     */
-    var time;
+    var _time;
 
     return Q.race([
         // start timeout
         Q.promise(function(resolve, reject) {
-            time = setTimeout(function() {
+            _time = setTimeout(function() {
                 reject(new Error("interrupt timed out"));
             }, timeoutMS);
         }),
@@ -40,7 +57,7 @@ function _timedInterrupt(pin, mode, timeoutMS) {
         Q.promise(function(resolve, reject) {
             b.attachInterrupt(pin, function(x) {
                 if (x.value === b.LOW) {
-                    clearTimeout(time);
+                    clearTimeout(_time);
                     resolve(x);
                 }
             }, mode);
@@ -74,7 +91,11 @@ function onceInterrupt(pin, mode) {
     });
 }
 
-
+/**
+ * @brief Starts priming cycle
+ * 
+ * @retval promise
+ */
 function startPrime() {
 
     return pinWrite(_getPin(settings.relays, "prime1"), b.HIGH)
@@ -86,9 +107,28 @@ function startPrime() {
         });
 }
 
+/**
+ * @brief Starts pumping cycle
+ * 
+ * @param pump - pump1 / pump2 to use
+ * @param valveOpen - valve1open / valve2open
+ * 
+ * @retval promise
+ */
 function startPump(pump, valveOpen) {
-    // TODO: NEEDS HELP
     
+    // TODO: NEEDS HELP
+    var valveTimeout = setTimeout( function(){
+        // TODO: Bad things happened.  Valve didn't close
+    } , timeOuts.valveTimeOut)
+    
+    b.digitalWrite( valveOpen, b.HIGH );    // Open valve
+    Q.delay( 3000 )                         // Give the valve a few seconds to start to open
+        .then(
+            b.digitalWrite( pump. b.HIGH )) ;         // Start pump
+    
+    
+    // Set timeout
     /*
         If I'm understanding this correctly, in this function,
         we're waiting on either the timeout to reject, the flowSignal to reject,
@@ -96,7 +136,7 @@ function startPump(pump, valveOpen) {
     */
     return Q.race([
         // Start listening on tankSignal with a timeout
-        timedInterrupt(_getPin(settings.inputs, "tankfull"), b.RISING, timeOuts.primeTimeOut),
+        timedInterrupt(_getPin(settings.inputs, "tankfull"), b.RISING, timeOuts.pumpingTimeOut),
         // Start listening on flowSignal if an event is caught, reject the promise
         onceInterrupt(settings.inputs.flowSignal, inputHandler, b.FALLING)
         .then(Q.reject(new Error("Flow dropped below acceptable levels")))

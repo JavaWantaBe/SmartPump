@@ -3,5 +3,5 @@
     "outletTimeOut": 16000,
     "pumpingTimeOut": 200008,
     "generalTimeOut": 4996,
-    "valveTimeout": 15000
+    "valveTimeOut": 15000
 }
