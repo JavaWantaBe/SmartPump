@@ -122,8 +122,8 @@ function preCycle() {
     b.digitalWrite(getPin(settings.relays, "valve1close"), b.HIGH );
     b.digitalWrite(getPin(settings.relays, "valve2close"), b.HIGH );
 
-    return Q.all([timedInterrupt(getPin(settings.inputs, "valve1close"), b.FALLING, timeOuts.valveTimeOut),
-        timedInterrupt(getPin(settings.inputs, "valve2close"), b.FALLING, timeOuts.valveTimeOut)])
+    return Q.all([timedInterrupt(getPin(settings.inputs, "valve1closed"), b.FALLING, timeOuts.valveTimeOut),
+        timedInterrupt(getPin(settings.inputs, "valve2closed"), b.FALLING, timeOuts.valveTimeOut)])
         .finally(function(){
             b.digitalWrite(getPin(settings.relays, "valve1close"), b.LOW);
             b.digitalWrite(getPin(settings.relays, "valve2close"), b.LOW);
@@ -136,12 +136,12 @@ function preCycle() {
  * @retval promise
  */
 function startPrime() {
-    return pinWrite(getPin(settings.relays, "prime1"), b.HIGH)
+    return pinWrite(getPin(settings.relays, "prime"), b.HIGH)
         .then(function(){
-            timedInterrupt(getPin(settings.inputs, "prime"), b.FALLING, timeOuts.primeTimeOut);
+            timedInterrupt(getPin(settings.inputs, "primed"), b.FALLING, timeOuts.primeTimeOut);
         })
         .finally(function(){
-            b.digitalWrite(getPin(settings.relays, "prime1"), b.LOW);
+            b.digitalWrite(getPin(settings.relays, "prime"), b.LOW);
         });
 }
 
@@ -180,7 +180,7 @@ function startPump(pump, valveOpen, valveSignal) {
 function monitorFlow(pump) {
     // Wait for 3o seconds before monitoring pressure
     Q.delay(timeOuts.pressureTimeOut).then(function(){
-        return Q.race([timedInterrupt(getPin(settings.inputs, "tank"), b.RISING, timeOuts.pumpingTimeOut),
+        return Q.race([timedInterrupt(getPin(settings.inputs, "tankfull"), b.RISING, timeOuts.pumpingTimeOut),
             timedInterrupt(getPin(settings.inputs, "pressure"), b.FALLING, timeOuts.pumpingTimeOut)]);
     } ).finally(function(){
         b.digitalWrite(pump, b.LOW);
@@ -250,22 +250,22 @@ function startcycle(tidetime) {
 
     var QUERYSTRING = "SELECT pump_used FROM pump_cycle ORDER BY pump_used DESC LIMIT 1",
         INSERTSTRING = "INSERT INTO pump_cycle ( pump_used, avg_gpm, total_gallons, total_pumping_time, tide_tide_time ) VALUES(",
-        pump = null,
+        pump = "pump1",
         pumpPin = getPin(settings.relays, "pump1"), // Pump last used
         valveOpen = getPin(settings.relays, "valve1open"), // Pump outlet valve last used
-        valveOpenSignal = getPin(settings.inputs,"valve1open" ),
+        valveOpenSignal = getPin(settings.inputs,"valve1opened" ),
         valveClose = getPin(settings.relays, "valve1close" ),
-        valveCloseSignal = getPin(settings.inputs, "valve1close" ),
+        valveCloseSignal = getPin(settings.inputs, "valve1closed" ),
         startTime = new Date();
 
     return db.query(QUERYSTRING).then(function(result) {
-            pump = result[0].pump_used;
+            //pump = result[0].pump_used;
 
-            if(pump === 'pump1' || pump === null) {
+            if(pump === 'pump1') {
                 pumpPin = getPin(settings.relays, "pump2");
                 valveOpen = getPin(settings.relays, "valve2open");
-                valveOpenSignal = getPin(settings.inputs, "valve2open");
-                valveCloseSignal = getPin(settings.inputs, "valve2close");
+                valveOpenSignal = getPin(settings.inputs, "valve2opened");
+                valveCloseSignal = getPin(settings.inputs, "valve2closed");
                 pump = 'pump2';
             }
             else {
@@ -288,7 +288,7 @@ function startcycle(tidetime) {
         } ).finally( function(){
             var endTime = new Date();
             cleanup();
-            db.query(INSERTSTRING + pump + ", 0, 0, " + new Date( endTime - startTime ) + " , " + tidetime);
+            //db.query(INSERTSTRING + pump + ", 0, 0, " + new Date( endTime - startTime ) + " , " + tidetime);
         });
 }
 
@@ -333,6 +333,8 @@ module.exports = {
             logger.error("pump pin assignment failed");
             throw new Error("pump pin assignment failed");
         }
+        
+        startcycle( Date.now() );
 
     },
     start: startcycle
