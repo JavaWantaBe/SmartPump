@@ -259,6 +259,7 @@ function startcycle(tidetime) {
         startTime = new Date();
 
     return db.query(QUERYSTRING).then(function(result) {
+<<<<<<< HEAD
         //pump = result[0].pump_used;
 
         if(pump === 'pump1') {
@@ -272,6 +273,21 @@ function startcycle(tidetime) {
             pump = 'pump1';
         }
     } )
+=======
+            //pump = result[0].pump_used;
+
+            if(pump === 'pump1') {
+                pumpPin = getPin(settings.relays, "pump2");
+                valveOpen = getPin(settings.relays, "valve2open");
+                valveOpenSignal = getPin(settings.inputs, "valve2opened");
+                valveCloseSignal = getPin(settings.inputs, "valve2closed");
+                pump = 'pump2';
+            }
+            else {
+                pump = 'pump1';
+            }
+        } )
+>>>>>>> origin/pumps
         .then(preCycle)
         .then(startPrime)
         .then(startPump.bind(null, pumpPin, valveOpen, valveOpenSignal))
@@ -333,6 +349,8 @@ module.exports = {
             logger.error("pump pin assignment failed");
             throw new Error("pump pin assignment failed");
         }
+        
+        startcycle( Date.now() );
 
         startcycle( Date.now() );
 
