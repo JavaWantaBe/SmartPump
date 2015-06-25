@@ -5,7 +5,24 @@
  * 
  * @brief Logic for pumping systems
  * 
- * 
+ * Algorithm for pumping system:
+ *  1. Turn on all close valves
+ *  2. Check if closed
+ *  3. If closed, turn off close valves relay
+ *  4. Turn on priming system
+ *  5. Wait for prime
+ *  6. If prime signal received, turn off prime
+ *  7. Turn on selected pump and open valve
+ *  8. Wait for open valve signal
+ *  9. Turn off open valve relay
+ *  10. Wait 30 seconds
+ *  11. Watch pressure sensor, if triggered or timeout pump is turned off
+ *  12. Watch for tank sensor, if triggered or timeout pump is turned off
+ *  13. Wait for 5 minutes for drainage
+ *  14. Close valve relay
+ *  15. Wait for close valve signal
+ *  16. Log data to database
+ *  17. Turn off all relays
  * 
  * 
  */
@@ -27,29 +44,52 @@ var Q = require('q'),
  * 
  * @retval value of pin
  */
-function _getPin(pins, label) {
+function getPin(pins, label) {
     return _.filter(pins, function(input) {
         return input.label === label;
     }).map(function(input) {
         return input.pin;
-    });
+    })[0];
+}
+
+/**
+ * @brief Async pin writing function
+ *
+ * @param pin
+ * @param value
+ * @returns {*|promise}
+ */
+function pinWrite( pin, value ) {
+    var deferred = Q.defer();
+
+    if(b.digitalWrite( pin, value) === true){
+        deferred.resolve;
+    } else {
+        deferred.reject( new Error("Pin " + pin + " failed to be written"));
+    }
+
+    return deferred.promise;
 }
 
 
-/*
-    Listens on a pin for an interrupt for `timeoutMS` milliseconds
-*/
-function _timedInterrupt(pin, mode, timeoutMS) {
+/**
+ * @brief Listens on a pin for an interrupt for `timeoutMS` milliseconds
+ * @param pin
+ * @param mode
+ * @param timeoutMS
+ * @returns {*}
+ */
+function timedInterrupt(pin, mode, timeoutMS) {
     /* 
         race returns a promise that is resolved/rejected
         when the first promise in the passed array resolves/rejects
     */
-    var _time;
+    var time;
 
     return Q.race([
         // start timeout
         Q.promise(function(resolve, reject) {
-            _time = setTimeout(function() {
+            time = setTimeout(function() {
                 reject(new Error("interrupt timed out"));
             }, timeoutMS);
         }),
@@ -57,38 +97,37 @@ function _timedInterrupt(pin, mode, timeoutMS) {
         Q.promise(function(resolve, reject) {
             b.attachInterrupt(pin, function(x) {
                 if (x.value === b.LOW) {
-                    clearTimeout(_time);
+                    clearTimeout(time);
                     resolve(x);
                 }
             }, mode);
 
         })
     ]).finally(function() {
-        /*
-            Finally is used to clean up regardless of whether or not
-            the promise resolved without affecting the resolved value or
-            rejected log
-        */
-        return Q.promise(function(resolve, reject) {
-            b.detachInterrupt(pin) ? resolve("detached") : reject(new Error("not detached from pin - " + pin));
+            /*
+                Finally is used to clean up regardless of whether or not
+                the promise resolved without affecting the resolved value or
+                rejected log
+            */
+            b.detachInterrupt(pin);
         });
-
-    });
 }
 
-/*
-    Same as b.attachInterrupt except returns a promise and
-    detaches the interrupt immediately after an interrupt is handled.
+/**
+ * @brief Starts the preCycle checks
+ *
+ * @returns {*}
+ */
+function preCycle() {
+    b.digitalWrite(getPin(settings.relays, "valve1close"), b.HIGH );
+    b.digitalWrite(getPin(settings.relays, "valve2close"), b.HIGH );
 
-    The promise is resolved when the interrupt is detached successfully
-*/
-function onceInterrupt(pin, mode) {
-    return Q.promise(function(resolve, reject) {
-        b.attachInterrupt(pin, function(x) {
-            if (x.value === b.LOW)
-                b.detachInterrupt(pin) ? resolve("detached") : reject(new Error("not detached from pin - " + pin));
-        }, mode);
-    });
+    return Q.all([timedInterrupt(getPin(settings.inputs, "valve1close"), b.FALLING, timeOuts.valveTimeOut),
+        timedInterrupt(getPin(settings.inputs, "valve2close"), b.FALLING, timeOuts.valveTimeOut)])
+        .finally(function(){
+            b.digitalWrite(getPin(settings.relays, "valve1close"), b.LOW);
+            b.digitalWrite(getPin(settings.relays, "valve2close"), b.LOW);
+        });
 }
 
 /**
@@ -97,13 +136,12 @@ function onceInterrupt(pin, mode) {
  * @retval promise
  */
 function startPrime() {
-
-    return pinWrite(_getPin(settings.relays, "prime1"), b.HIGH)
-        .then(function() {
-            return timedInterrupt(_getPin(settings.inputs, "prime"), b.FALLING, timeOuts.primeTimeOut);
+    return pinWrite(getPin(settings.relays, "prime1"), b.HIGH)
+        .then(function(){
+            timedInterrupt(getPin(settings.inputs, "prime"), b.FALLING, timeOuts.primeTimeOut);
         })
-        .finally(function() {
-            return pinWrite(_getPin(settings.relays, "prime1"), b.LOW);
+        .finally(function(){
+            b.digitalWrite(getPin(settings.relays, "prime1"), b.LOW);
         });
 }
 
@@ -115,54 +153,72 @@ function startPrime() {
  * 
  * @retval promise
  */
-function startPump(pump, valveOpen) {
-    
-    // TODO: NEEDS HELP
-    var valveTimeout = setTimeout( function(){
-        // TODO: Bad things happened.  Valve didn't close
-    } , timeOuts.valveTimeOut)
-    
-    b.digitalWrite( valveOpen, b.HIGH );    // Open valve
-    Q.delay( 3000 )                         // Give the valve a few seconds to start to open
-        .then(
-            b.digitalWrite( pump. b.HIGH )) ;         // Start pump
-    
-    
-    // Set timeout
-    /*
-        If I'm understanding this correctly, in this function,
-        we're waiting on either the timeout to reject, the flowSignal to reject,
-        or the tankSignal to resolve then we're detaching all of the interrupts
-    */
-    return Q.race([
-        // Start listening on tankSignal with a timeout
-        timedInterrupt(_getPin(settings.inputs, "tankfull"), b.RISING, timeOuts.pumpingTimeOut),
-        // Start listening on flowSignal if an event is caught, reject the promise
-        onceInterrupt(settings.inputs.flowSignal, inputHandler, b.FALLING)
-        .then(Q.reject(new Error("Flow dropped below acceptable levels")))
-        // Q.race will ensure only the first promise to resolve/reject will be passed on
-    ]);
-    // onceInterrupt and timedInterrupt both handle detaching interrupts,
-    // so there's no need for a detachInterrupt call for either of them
+function startPump(pump, valveOpen, valveSignal) {
+    var valveTime = setTimeout(function(){
+        logger.error("Valve " + valveOpen + " failed to open completely");
+        b.detachInterrupt(valveSignal);
+        b.digitalWrite(valveOpen, b.LOW);
+    }, timeOuts.valveTimeOut);
+
+    b.attachInterrupt(valveSignal, function(x) {
+        if(x.value == b.LOW ) {
+            b.detachInterrupt(valveSignal);
+            b.digitalWrite(valveOpen, b.LOW);
+            clearTimeout(valveTime);
+        }
+    }, b.FALLING);
+
+    return pinWrite(pump, b.HIGH)
+        .then(function(){
+            return pinWrite(valveOpen, b.HIGH);
+        });
 }
 
-function endCycle() {
-    /*
-        digitalWrite can error asynchronously, so
-        I've just wrapped up all the promises in a single promise
-
-        This way, if any calls to digitalWrite fail, we can catch the error
-    */
-    return Q.all(_.map( settings.relays, function(relay) {
-        return digitalWrite(relay.pin, b.LOW);
-    }));
+/**
+ *
+ */
+function monitorFlow(pump) {
+    // Wait for 3o seconds before monitoring pressure
+    Q.delay(timeOuts.pressureTimeOut).then(function(){
+        return Q.race([timedInterrupt(getPin(settings.inputs, "tank"), b.RISING, timeOuts.pumpingTimeOut),
+            timedInterrupt(getPin(settings.inputs, "pressure"), b.FALLING, timeOuts.pumpingTimeOut)]);
+    } ).finally(function(){
+        b.digitalWrite(pump, b.LOW);
+    });
 }
 
+/**
+ *
+ */
+function endCycle(valveClose, valveCloseSignal) {
+    Q.delay(timeOuts.finishTimeOut).then(function(){
+        return pinWrite( valveClose, b.HIGH);
+    }).then(function(){
+        return timedInterrupt(valveCloseSignal, b.FALLING, timeOuts.valveTimeOut);
+    } ).finally(function(){
+        b.digitalWrite(valveClose, b.LOW);
+    });
+}
+
+/**
+ * @brief Resets all relays to OFF position
+ */
+function cleanup() {
+    _.forEach( settings.relays, function(relay){
+        b.digitalWrite(relay.pin, b.LOW);
+    });
+}
+
+/**
+ * @brief Emergency Stop
+ *
+ * @param state
+ */
 function emergencyStop(state) {
-
-    if (state === b.HIGH) {
+    if(state.value === b.HIGH) {
+        cleanup();
         logger.warn("Emergency Stop Pressed");
-        endCycle();
+        b.detachInterrupt(getPin(settings.inputs, "emergency"));
     }
 }
 
@@ -194,35 +250,34 @@ function startcycle(tidetime) {
 
     var QUERYSTRING = "SELECT pump_used FROM pump_cycle ORDER BY pump_used DESC LIMIT 1",
         INSERTSTRING = "INSERT INTO pump_cycle ( pump_used, avg_gpm, total_gallons, total_pumping_time, tide_tide_time ) VALUES(",
-        pump,
-        pumpPin = _getPin(settings.relays, "pump1"), // Pump last used
-        valveOpen = _getPin(settings.relays, "valve1open"), // Pump outlet valve last used
-        pumpingTime = new Date();
-
-    if (b.digitalRead(_getPin(settings.inputs, "valve1closed")) != b.LOW || b.digitalRead(_getPin(settings.inputs, "valve2closed")) != b.LOW) {
-        // TODO: Need to close valves and wait until received closed signal
-    }
+        pump = null,
+        pumpPin = getPin(settings.relays, "pump1"), // Pump last used
+        valveOpen = getPin(settings.relays, "valve1open"), // Pump outlet valve last used
+        valveOpenSignal = getPin(settings.inputs,"valve1open" ),
+        valveClose = getPin(settings.relays, "valve1close" ),
+        valveCloseSignal = getPin(settings.inputs, "valve1close" ),
+        startTime = new Date();
 
     return db.query(QUERYSTRING).then(function(result) {
-            /*
-                Why is pump set to settings.relay.pump1 if it's
-                immediately being overwritten with the result of this query?
-            */
             pump = result[0].pump_used;
 
-            if (pump === 'pump1' || pump === null) {
-                pumppin = _getPin(settings.relays, "pump2");
-                valveOpen = _getPin(settings.relays, "pump2open");
+            if(pump === 'pump1' || pump === null) {
+                pumpPin = getPin(settings.relays, "pump2");
+                valveOpen = getPin(settings.relays, "valve2open");
+                valveOpenSignal = getPin(settings.inputs, "valve2open");
+                valveCloseSignal = getPin(settings.inputs, "valve2close");
                 pump = 'pump2';
             }
             else {
                 pump = 'pump1';
             }
-        })
+        } )
+        .then(preCycle)
         .then(startPrime)
-        .then(startPump.bind(null, pump, valveOpen))
-        .then(db.query(INSERTSTRING + pump + ", 0, 0, " + Date.getTime() - pumpingTime + " , " + tidetime))
-        .catch(function() {
+        .then(startPump.bind(null, pumpPin, valveOpen, valveOpenSignal))
+        .then(monitorFlow.bind(null, pumpPin))
+        .then(endCycle.bind(null, valveClose, valveCloseSignal))
+        .catch(function(err) {
             /*
                 I removed the many additional error handlers.
                 Errors will cascade through .then calls until they hit a
@@ -230,10 +285,10 @@ function startcycle(tidetime) {
                 error seperately.
             */
             logger.error("Error: " + err);
-            return endCycle();
-        })
-        .finally(function() {
-            return endCycle();
+        } ).finally( function(){
+            var endTime = new Date();
+            cleanup();
+            db.query(INSERTSTRING + pump + ", 0, 0, " + new Date( endTime - startTime ) + " , " + tidetime);
         });
 }
 
@@ -269,9 +324,9 @@ module.exports = {
             b.digitalWrite(relay.pin, b.LOW);
         });
 
-        b.attachInterrupt(_getPin(settings.inputs, "emergency"), emergencyStop, b.RISING);
+        b.attachInterrupt(getPin(settings.inputs, "emergency"), emergencyStop, b.RISING);
 
-        if (relaysAreValid && inputsAreValid) {
+        if(relaysAreValid && inputsAreValid) {
             logger.debug("pump pins initialized");
         }
         else {
