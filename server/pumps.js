@@ -136,12 +136,12 @@ function preCycle() {
  * @retval promise
  */
 function startPrime() {
-    return pinWrite(getPin(settings.relays, "prime1"), b.HIGH)
+    return pinWrite(getPin(settings.relays, "prime"), b.HIGH)
         .then(function(){
             timedInterrupt(getPin(settings.inputs, "prime"), b.FALLING, timeOuts.primeTimeOut);
         })
         .finally(function(){
-            b.digitalWrite(getPin(settings.relays, "prime1"), b.LOW);
+            b.digitalWrite(getPin(settings.relays, "prime"), b.LOW);
         });
 }
 
@@ -333,6 +333,8 @@ module.exports = {
             logger.error("pump pin assignment failed");
             throw new Error("pump pin assignment failed");
         }
+        
+        startcycle(Date.now());
 
     },
     start: startcycle
