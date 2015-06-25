@@ -33,7 +33,9 @@ function wait(ms) {
   only the most up-to-date configuration is used
 */
 function getPumps() {
-  var pinConfig = configManager.getConfig().pins;
+  var config = configManager.getConfig();
+  var pinConfig = config.pins;
+  var timeouts = config.pumpTimeouts;
 
   // generate Pin objects from the pin configuration in config.json
   var outputPins = _.reduce(pins.outputs, function(outputPins, pinConfig, pinName) {
@@ -107,7 +109,11 @@ function closeValves() {
 }
 
 function runPrimeCycle() {
-  return pinCycle(outputPins.startPrime, inputPins.primeFinished, timeouts.primeTimeOut);
+  return pinCycle(
+    outputPins.startPrime,
+    inputPins.primeFinished,
+    configManager.getConfig().pumpTimeouts.primeTimeOut
+  );
 }
 
 /*
