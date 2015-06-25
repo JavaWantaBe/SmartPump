@@ -42,7 +42,7 @@ function getPumps() {
     outputPins[pinName] = new OutputPin(
       pinConfig.pin,
       pinConfig.onValue === "HIGH" ? HIGH : LOW,
-      pinConfig.onValue === "HIGH" ? HIGH : LOW
+      pinConfig.offValue === "HIGH" ? HIGH : LOW
     );
 
     return outputPins;
