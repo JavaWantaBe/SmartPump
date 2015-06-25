@@ -1,3 +1,6 @@
 {
-    
+  "host": "smtp.gmail.com",
+  "port": "525",
+  "user": "smartpump@gmail.com",
+  "password": "happy"
 }

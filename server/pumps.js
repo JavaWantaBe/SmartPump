@@ -1,140 +1,225 @@
-"use strict";
+"use-strict";
 
 /**
  * @file pumps.js
- *
- * @brief Controls pumps attached to system
- *
- *
+ * 
+ * @brief Logic for pumping systems
+ * 
+ * Algorithm for pumping system:
+ *  1. Turn on all close valves
+ *  2. Check if closed
+ *  3. If closed, turn off close valves relay
+ *  4. Turn on priming system
+ *  5. Wait for prime
+ *  6. If prime signal received, turn off prime
+ *  7. Turn on selected pump and open valve
+ *  8. Wait for open valve signal
+ *  9. Turn off open valve relay
+ *  10. Wait 30 seconds
+ *  11. Watch pressure sensor, if triggered or timeout pump is turned off
+ *  12. Watch for tank sensor, if triggered or timeout pump is turned off
+ *  13. Wait for 5 minutes for drainage
+ *  14. Close valve relay
+ *  15. Wait for close valve signal
+ *  16. Log data to database
+ *  17. Turn off all relays
+ * 
+ * 
  */
 
-// Variables
-var Q        = require( 'q' ),
-    b        = require( 'bonescript' ),
-    _        = require( 'lodash' ),
-    db       = require( './database' ),
-    logger   = require( './logger' )( 'pumps' ),
-    settings = require( './config/pinconfig'), // Use this instead of fs for JSON objects
-    timeOuts = require( './config/pumpsettings' );
 
-var ON = 1,
-    OFF = 0;
-
-var stop = false;
-
-// TODO: Flow counter variable needs to be created here.
+var Q = require('q'),
+    b = require('bonescript'),
+    _ = require('lodash'),
+    db = require('./database'),
+    logger = require('./logger')('pumps'),
+    settings = require('./config/pinconfig'), // Use this instead of fs for JSON objects
+    timeOuts = require('./config/pumpsettings');
 
 /**
- * @brief Handles interrupt request and evaluates
- * @param result
- * @returns {boolean}
+ * @brief Returns pin of assigned input or output based on label 
+ * 
+ * @param pins - settings.relays / settings.inputs
+ * @param label - label assigned to input or output
+ * 
+ * @retval value of pin
  */
-function inputHandler( result ){
-    return ( result.value === ON ) ? true : false;
+function getPin(pins, label) {
+    return _.filter(pins, function(input) {
+        return input.label === label;
+    }).map(function(input) {
+        return input.pin;
+    })[0];
 }
 
 /**
+ * @brief Async pin writing function
  *
- * @returns {deferred.promise|*}
+ * @param pin
+ * @param value
+ * @returns {*|promise}
  */
-function startPrime(){
-
+function pinWrite( pin, value ) {
     var deferred = Q.defer();
-    var timer;
 
-    b.digitalWrite( settings.relays.prime1, ON );
-
-    timer = setTimeout( function(){
-        b.detachInterrupt( settings.inputs.primeSignal );
-        b.digitalWrite( settings.relays.prime1, OFF );
-        deferred.reject( new Error( "Timeout on prime" ) );
-    }, timeOuts.primeTimeOut );
-
-    b.attachInterrupt( settings.inputs.primeSignal, inputHandler, b.RISING, function(){
-        clearTimeout( timer );
-        b.detachInterrupt( settings.inputs.primeSignal );
-        b.digitalWrite( settings.relays.prime1, OFF );
-        deferred.resolve();
-    });
+    if(b.digitalWrite( pin, value) === true){
+        deferred.resolve;
+    } else {
+        deferred.reject( new Error("Pin " + pin + " failed to be written"));
+    }
 
     return deferred.promise;
 }
 
+
 /**
- *
- * @param outlet
- * @returns {deferred.promise|*}
+ * @brief Listens on a pin for an interrupt for `timeoutMS` milliseconds
+ * @param pin
+ * @param mode
+ * @param timeoutMS
+ * @returns {*}
  */
-function startOutlet( outlet ){
-    var deferred = Q.defer();
-    var timer;
-    var signal = ( outlet === settings.relays.pump1Outlet ) ? settings.inputs.pump1Outlet : settings.inputs.pump2Outlet;
+function timedInterrupt(pin, mode, timeoutMS) {
+    /* 
+        race returns a promise that is resolved/rejected
+        when the first promise in the passed array resolves/rejects
+    */
+    var time;
 
-    b.digitalWrite( outlet, ON );
+    return Q.race([
+        // start timeout
+        Q.promise(function(resolve, reject) {
+            time = setTimeout(function() {
+                reject(new Error("interrupt timed out"));
+            }, timeoutMS);
+        }),
+        // attach interrupt
+        Q.promise(function(resolve, reject) {
+            b.attachInterrupt(pin, function(x) {
+                if (x.value === b.LOW) {
+                    clearTimeout(time);
+                    resolve(x);
+                }
+            }, mode);
 
-    timer = setTimeout( function(){
-        b.digitalWrite( outlet, OFF );
-        b.detachInterrupt( signal );
-        deferred.reject( new Error( "Timeout on valve opening" ) );
-    }, timeOuts.outletTimeOut );
+        })
+    ]).finally(function() {
+            /*
+                Finally is used to clean up regardless of whether or not
+                the promise resolved without affecting the resolved value or
+                rejected log
+            */
+            b.detachInterrupt(pin);
+        });
+}
 
-    b.attachInterrupt( signal, inputHandler, b.RISING, function(){
-        clearTimeout( timer );
-        b.detachInterrupt( signal );
-        deferred.resolve();
-    });
+/**
+ * @brief Starts the preCycle checks
+ *
+ * @returns {*}
+ */
+function preCycle() {
+    b.digitalWrite(getPin(settings.relays, "valve1close"), b.HIGH );
+    b.digitalWrite(getPin(settings.relays, "valve2close"), b.HIGH );
 
-    return deferred.promise;
+    return Q.all([timedInterrupt(getPin(settings.inputs, "valve1close"), b.FALLING, timeOuts.valveTimeOut),
+        timedInterrupt(getPin(settings.inputs, "valve2close"), b.FALLING, timeOuts.valveTimeOut)])
+        .finally(function(){
+            b.digitalWrite(getPin(settings.relays, "valve1close"), b.LOW);
+            b.digitalWrite(getPin(settings.relays, "valve2close"), b.LOW);
+        });
+}
+
+/**
+ * @brief Starts priming cycle
+ * 
+ * @retval promise
+ */
+function startPrime() {
+    return pinWrite(getPin(settings.relays, "prime1"), b.HIGH)
+        .then(function(){
+            timedInterrupt(getPin(settings.inputs, "prime"), b.FALLING, timeOuts.primeTimeOut);
+        })
+        .finally(function(){
+            b.digitalWrite(getPin(settings.relays, "prime1"), b.LOW);
+        });
+}
+
+/**
+ * @brief Starts pumping cycle
+ * 
+ * @param pump - pump1 / pump2 to use
+ * @param valveOpen - valve1open / valve2open
+ * 
+ * @retval promise
+ */
+function startPump(pump, valveOpen, valveSignal) {
+    var valveTime = setTimeout(function(){
+        logger.error("Valve " + valveOpen + " failed to open completely");
+        b.detachInterrupt(valveSignal);
+        b.digitalWrite(valveOpen, b.LOW);
+    }, timeOuts.valveTimeOut);
+
+    b.attachInterrupt(valveSignal, function(x) {
+        if(x.value == b.LOW ) {
+            b.detachInterrupt(valveSignal);
+            b.digitalWrite(valveOpen, b.LOW);
+            clearTimeout(valveTime);
+        }
+    }, b.FALLING);
+
+    return pinWrite(pump, b.HIGH)
+        .then(function(){
+            return pinWrite(valveOpen, b.HIGH);
+        });
 }
 
 /**
  *
- * @param pump
- * @returns {deferred.promise|*}
  */
-function startPump( pump ){
-    var deferred = Q.defer();
-    var timer;
-
-    b.digitalWrite( pump, ON );
-
-    timer = setTimeout( function(){
-        b.detachInterrupt( settings.inputs.tankSignal );
-        deferred.reject( new Error( "Timeout on pumping cycle" ) );
-    }, timeOuts.primeTimeOut );
-
-    b.attachInterrupt( settings.inputs.flowSignal, inputHandler, b.FALLING, function(){
-        b.detachInterrupt( settings.inputs.tankSignal );
-        b.detachInterrupt( settings.inputs.flowSignal );
-        deferred.reject( new Error( "Flow dropped below acceptable levels" ) );
-    } );
-
-    b.attachInterrupt( settings.inputs.tankSignal, inputHandler, b.RISING, function(){
-        clearTimeout( timer );
-        b.detachInterrupt( settings.inputs.flowSignal );
-        b.detachInterrupt( settings.inputs.tankSignal );
-        deferred.resolve();
-    });
-
-    return deferred.promise;
-}
-
-/**
- *
- */
-function endCycle(){
-    _.forEach( settings.relays, function( pin ) {
-        b.digitalWrite( pin, OFF );
+function monitorFlow(pump) {
+    // Wait for 3o seconds before monitoring pressure
+    Q.delay(timeOuts.pressureTimeOut).then(function(){
+        return Q.race([timedInterrupt(getPin(settings.inputs, "tank"), b.RISING, timeOuts.pumpingTimeOut),
+            timedInterrupt(getPin(settings.inputs, "pressure"), b.FALLING, timeOuts.pumpingTimeOut)]);
+    } ).finally(function(){
+        b.digitalWrite(pump, b.LOW);
     });
 }
 
 /**
  *
  */
-function emergencyStop(){
-    endCycle();
-    stop = true;
-    logger.warn( "Emergency Stop Pressed" );
+function endCycle(valveClose, valveCloseSignal) {
+    Q.delay(timeOuts.finishTimeOut).then(function(){
+        return pinWrite( valveClose, b.HIGH);
+    }).then(function(){
+        return timedInterrupt(valveCloseSignal, b.FALLING, timeOuts.valveTimeOut);
+    } ).finally(function(){
+        b.digitalWrite(valveClose, b.LOW);
+    });
+}
+
+/**
+ * @brief Resets all relays to OFF position
+ */
+function cleanup() {
+    _.forEach( settings.relays, function(relay){
+        b.digitalWrite(relay.pin, b.LOW);
+    });
+}
+
+/**
+ * @brief Emergency Stop
+ *
+ * @param state
+ */
+function emergencyStop(state) {
+    if(state.value === b.HIGH) {
+        cleanup();
+        logger.warn("Emergency Stop Pressed");
+        b.detachInterrupt(getPin(settings.inputs, "emergency"));
+    }
 }
 
 
@@ -161,48 +246,50 @@ function emergencyStop(){
  *
  * @returns {*}
  */
-function startcycle(){
-    var QUERYSTRING = "SELECT pump_used FROM pump_cycle ORDER BY pump_used DESC LIMIT 1";
-    var pump = settings.relays.pump1,               // Pump last used
-        pumpOutlet = settings.relays.pump1Outlet;   // Pump outlet valve last used
+function startcycle(tidetime) {
 
-    return db.query( QUERYSTRING).then( function( result ){
-        pump = result[0].pump_used;
+    var QUERYSTRING = "SELECT pump_used FROM pump_cycle ORDER BY pump_used DESC LIMIT 1",
+        INSERTSTRING = "INSERT INTO pump_cycle ( pump_used, avg_gpm, total_gallons, total_pumping_time, tide_tide_time ) VALUES(",
+        pump = null,
+        pumpPin = getPin(settings.relays, "pump1"), // Pump last used
+        valveOpen = getPin(settings.relays, "valve1open"), // Pump outlet valve last used
+        valveOpenSignal = getPin(settings.inputs,"valve1open" ),
+        valveClose = getPin(settings.relays, "valve1close" ),
+        valveCloseSignal = getPin(settings.inputs, "valve1close" ),
+        startTime = new Date();
 
-        if( pump === 'pump1' || pump === null ){
-            pump = settings.relays.pump2;
-            pumpOutlet = settings.relays.pump2Outlet;
-        } else {
-            pump = settings.relays.pump1;
-            pumpOutlet = settings.relays.pump1Outlet;
-        }
+    return db.query(QUERYSTRING).then(function(result) {
+            pump = result[0].pump_used;
 
-    }, function( err ) {
-        // error in database connect
-        logger.error( "Failed to connect to database " + err );
-
-    }).then( startPrime, function( err ){
-        endCycle();
-        logger.error( "Error: " + err );
-    }, function( progress ){
-        // TODO: Add emergency stop
-
-    }).then( startOutlet( pumpOutlet ), function( err ){
-        endCycle();
-        logger.error( "Error: " + err );
-    }, function( progress ){
-        // TODO: Add emergency stop
-
-    }).then( startPump( pump ), function( err ){
-        endCycle();
-        logger.error( "Error: " + err);
-    }, function( progress ){
-        // TODO: Add emergency stop
-
-    }).finally( function(){
-        // TODO: Log a successful pumping cycle into the database.
-        endCycle();
-    });
+            if(pump === 'pump1' || pump === null) {
+                pumpPin = getPin(settings.relays, "pump2");
+                valveOpen = getPin(settings.relays, "valve2open");
+                valveOpenSignal = getPin(settings.inputs, "valve2open");
+                valveCloseSignal = getPin(settings.inputs, "valve2close");
+                pump = 'pump2';
+            }
+            else {
+                pump = 'pump1';
+            }
+        } )
+        .then(preCycle)
+        .then(startPrime)
+        .then(startPump.bind(null, pumpPin, valveOpen, valveOpenSignal))
+        .then(monitorFlow.bind(null, pumpPin))
+        .then(endCycle.bind(null, valveClose, valveCloseSignal))
+        .catch(function(err) {
+            /*
+                I removed the many additional error handlers.
+                Errors will cascade through .then calls until they hit a
+                catch call, so you don't need to handle each .then's
+                error seperately.
+            */
+            logger.error("Error: " + err);
+        } ).finally( function(){
+            var endTime = new Date();
+            cleanup();
+            db.query(INSERTSTRING + pump + ", 0, 0, " + new Date( endTime - startTime ) + " , " + tidetime);
+        });
 }
 
 /**
@@ -220,31 +307,33 @@ function startcycle(){
  *
  */
 module.exports = {
-    init:function(){
-            var errorFlag = false;
-            stop = false;
+    init: function() {
+        /*
+            _.every returns true only if the iterator function
+            returns true for every value in the collection
+        */
+        var relaysAreValid = _.every(settings.relays, function(relay) {
+            return b.pinMode(relay.pin, b.OUTPUT, 7, 'pulldown', 'fast');
+        });
 
-            // TODO: Pin needed for pressure switch
-            b.attachInterrupt( settings.inputs.emergencyBtn, inputHandler, b.RISING, emergencyStop );
+        var inputsAreValid = _.every(settings.inputs, function(signal) {
+            return b.pinMode(signal.pin, b.INPUT, 7, 'pullup', 'fast');
+        });
 
-            _.forEach( settings.relays, function( pin ){
-                if( b.pinMode( pin, b.OUTPUT ) === false ){
-                    errorFlag = true;
-                }
-            });
+        _.forEach(settings.relays, function(relay) {
+            b.digitalWrite(relay.pin, b.LOW);
+        });
 
-            _.forEach( settings.inputs, function( pin ){
-                if( b.pinMode( pin, b.INPUT ) === false ){
-                    errorFlag = true;
-                }
-            });
+        b.attachInterrupt(getPin(settings.inputs, "emergency"), emergencyStop, b.RISING);
 
-            if( errorFlag === true ){
-                logger.info( "pump pins initialized" );
-            } else {
-                logger.error( "pin assignment failed" );
-                throw new Error( "Pin assignment failed" );
-            }
-        },
+        if(relaysAreValid && inputsAreValid) {
+            logger.debug("pump pins initialized");
+        }
+        else {
+            logger.error("pump pin assignment failed");
+            throw new Error("pump pin assignment failed");
+        }
+
+    },
     start: startcycle
 };
