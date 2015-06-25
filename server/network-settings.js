@@ -62,7 +62,6 @@ function setSettings(newSettings) {
 }
 
 function writeSettings(newSettings) {
-    console.log("Writing settings:",newSettings);
     return exec(_scriptWrite + 
         " address=" + newSettings.ip.join(".") + 
         " netmask=" + newSettings.subnet.join(".") +
@@ -160,7 +159,6 @@ function set_dhcp(dhcp_mode) {
  * @brief Restarts the network interface
  */
 function restart_network() {
-
     var exec = require( 'child_process').exec;
 
     exec( "ifdown eth0 && ifup eth0",

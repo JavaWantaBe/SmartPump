@@ -82,9 +82,12 @@ function getRequestURL(from, too) {
 // Returns a promise that resolves the retrieved tide entries as an array of javascript dates
 function fetchTideDates(from, too) {
     var url = getRequestURL(from, too)
-    logger.info("Requesting: '" + url + "'");
+    logger.info("Requesting tide data from: '" + url + "'");
     return get(url)
-        .then(tideParser.parse)
+        .then(function(rawTideData) {
+            logger.info("Successfully retrieved tide data");
+            return tideParser.parse(rawTideData);
+        })
         .catch(function(error) {
             return Promise.reject(new Error("Failed to fetch tide data from NOAA's servers: " + error.message));
         });

@@ -1,12 +1,12 @@
 "use strict";
 
-var gulp        = require("gulp"),                // Task runner
-    gutil       = require("gulp-util"),
-    Q           = require("q"),
-    _           = require("lodash"),
-    plumber     = require("gulp-plumber"),        // Handles gulp errors without stopping the watch task
-    source      = require("vinyl-source-stream"), // Allows the use of text streams with gulp (needed for browserify)
-    port        = 8888;                           // For test server
+var gulp = require("gulp"),                // Task runner
+    gutil = require("gulp-util"),
+    Q = require("q"),
+    _ = require("lodash"),
+    plumber = require("gulp-plumber"),        // Handles gulp errors without stopping the watch task
+    source = require("vinyl-source-stream"), // Allows the use of text streams with gulp (needed for browserify)
+    port = 8888;                           // For test server
 
 var bundler = _.once(function() {
     var Browserify = require("browserify");
