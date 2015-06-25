@@ -53,7 +53,7 @@
             "active": "low"
         },
         "input3": {
-            "label": "prime",
+            "label": "primed",
             "pin": "P8_14",
             "active": "low"
         },
@@ -63,7 +63,7 @@
             "active": "high"
         },
         "input5": {
-            "label": "valve1open",
+            "label": "valve1opened",
             "pin": "P8_16",
             "active": "low"
         },
@@ -73,7 +73,7 @@
             "active": "low"
         },
         "input7": {
-            "label": "valve2open",
+            "label": "valve2opened",
             "pin": "P8_18",
             "active": "low"
         },
