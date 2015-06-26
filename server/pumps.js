@@ -27,7 +27,7 @@ function isHigh(signal) {
 }
 
 function wait(ms) {
-  return new Promise(function(resolve) {
+  return Q.promise(function(resolve) {
     setTimeout(resolve, ms);
   });
 }
