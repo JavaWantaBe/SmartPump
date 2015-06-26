@@ -1,3 +1,4 @@
+var Q = require("q");
 var device = require("./device");
 var InputPin = require("./hardware-models/input-pin");
 var OutputPin = require("./hardware-models/output-pin");
@@ -11,6 +12,9 @@ var HIGH = device.HIGH;
 var FALLING = device.FALLING;
 var RISING = device.RISING;
 
+var currentPumpId = "pump1";
+
+// handler functions
 function isLow(signal) {
   return signal.value === LOW;
 }
@@ -97,12 +101,10 @@ function getPumps() {
   };
 }
 
-var currentPumpId = "pump1";
-
 // was "preCycle". I chose a name that describes what the function does, not when it's called
 // timing out and turning off pins are both handled by the Valve close function
 function closeValves() {
-  return Promise.all([
+  return Q.all([
     pump1.valve.close(),
     pump2.valve.close()
   ]);
@@ -128,42 +130,35 @@ function runPrimeCycle() {
 function monitorFlow(pump) {
   var timeout;
 
-  function cleanup() {
+  function cleanupMonitorFlow() {
     clearTimeout(timeout);
     inputs.tankIsFull.detach();
     inputs.pressure.detach();
   }
 
-  return Promise.race([
-    new Promise(function(resolve, reject) { // timeout
+  return Q.race([
+    Q.Promise(function(resolve, reject) { // timeout
       timeout = setTimeout(function() {
-        cleanup();
         reject(new Error("Pump timed out"));
       });
     }),
 
-    new Promise(function(resolve, reject) { // pressure
-      // I'm not sure what this signal means,
-      // so I'm not sure if this should be resolving or rejecting
+    Q.Promise(function(resolve, reject) { // pressure
       inputs.pressure.once(function() {
-        cleanup();
-        reject();
+        reject(new Error("Too much pressure?")); // TODO: Figure out what goes here
       });
     }),
 
-    new Promise(function(resolve, reject) { // tank full
+    Q.Promise(function(resolve, reject) { // tank full
       inputs.tankIsFull.once(function() {
-        cleanup();
         resolve();
       });
     })
-  ]);
+  ]).finally(cleanupMonitorFlow);
 }
 
 function cleanUp() {
-  _.each(outputPins, function(outputPin) {
-    outputPin.turnOff();
-  });
+  _.invoke(outputPins, "turnOff"); // runs .turnOff() on all output pins
 }
 
 function startCycle() {
@@ -179,9 +174,10 @@ function startCycle() {
     .then(wait.bind(null, 30000))
     .then(monitorFlow.bind(null, pump))
     .then(pump.stop)
-    .then(cleanup, function(error) {
-      console.log("Pump cycle failed: " + error);
-      cleanUp();
-      return Promise.reject(error);
-    });
+    .then(wait.bind(null, 1000 * 60 * 5))
+    .catch(function(error) {
+      throw new Error("Pump cycle failed: " + error);
+    })
+    .finally(cleanUp);
 }
+

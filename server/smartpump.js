@@ -14,6 +14,7 @@
 var logger = require("./logger")("index");
 var webserver = require("./webserver");
 var configManager = require("./config-manager");
+var tideManager = require("./tide-manager");
 var scheduler = require("./pump-scheduler");
 var db = require("./database");
 var pumps = require("./pumps");
@@ -40,8 +41,7 @@ function fatalErrorHandler(error) {
     logger.error("FATAL " + error);
 }
 
-Q.resolve()
-    .then(status.init)
+status.init()
     .then(log("info", "Beagle bone status determined"))
     .then(db.connect)
     .then(log("info", "Successfully connected to mysql server"))
@@ -57,14 +57,16 @@ Q.resolve()
             }).catch(fatalErrorHandler);
         }
         
-        run();
         configManager.on("change", function() {
             logger.info("Configuration changed. Restarting scheduler");
             scheduler.stop();
         });
 
-        //setTimeout(function() {
-        //    configManager.merge({});
-        //}, 3000);
+        tideManager.on("change", function() {
+            logger.info("Tide data changed. Restarting scheduler");
+            scheduler.stop();
+        });
+
+        run();
     })
     .catch(fatalErrorHandler);

@@ -20,6 +20,10 @@ function InputPin(pin, handler, mode) {
 }
 
 _.extend(InputPin.prototype, {
+  read: function() {
+    return device.digitalRead(this.pin);
+  },
+
   /*
     Attaches an interrupt to this pin
     Params:

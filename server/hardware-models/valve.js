@@ -1,5 +1,7 @@
 var _ = require("lodash");
+var Q = require("q");
 var pinCycle = require("./pin-cycle");
+var device = require("device");
 
 /*
   params:
@@ -34,6 +36,9 @@ _.extend(Valve.prototype, {
       Rejects if the timeout finishes before the valve opens
   */
   open: function() {
+    if(this.openSuccessInput.read() === device.LOW) { // check if already open
+      return Q.resolve();
+    }
     return pinCycle(this.openOutput, this.openSuccessInput, this.openTimeoutMS);
   },
 
@@ -41,6 +46,9 @@ _.extend(Valve.prototype, {
     Same as #open, but closes the valve instead of opening it
   */
   close: function() {
+    if(this.closeSuccessInput.read() === device.LOW) { // check if already closed
+      return Q.resolve();
+    }
     return pinCycle(this.closeOutput, this.closeSuccessInput, this.closeTimeoutMS);
   }
 });

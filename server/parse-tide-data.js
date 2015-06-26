@@ -98,6 +98,4 @@ function parseTideData(data) {
         });
 }
 
-module.exports = {
-    parse: parseTideData
-};
+module.exports = parseTideData;

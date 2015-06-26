@@ -1,7 +1,9 @@
 var Q = require("q");
 
 /*
-  Utility function for handling the interaction between an input and output pin.
+  Utility function for handling the interaction between an input and output pin where we
+  write to an output, listen on an input, set a timeout, and wait for either the timeout or the 
+  interrupt.
   
   Params:
     startOutput:OutputPin Object - The pin that needs to be turned on to begin the cycle

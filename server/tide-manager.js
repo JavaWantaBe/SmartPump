@@ -1,7 +1,8 @@
 var _ = require("lodash");
 var EventEmitter = require("events").EventEmitter;
 var logger = require("./logger")("tide-manager");
-var tideRetriever = require("./tide-retriever");
+var downloadTideData = require("./download-tide-data");
+var parseTideData = require("./parse-tide-data");
 var getNextTideDate = require("./queries/get-next-tide-date");
 var storeTideDates = require("./queries/store-tide-dates");
 var getTideDates = require("./queries/get-tide-dates");
@@ -24,8 +25,12 @@ module.exports = _.extend(new EventEmitter(), {
   fetchNewTideDates: function() {
     var oneMonth = 1000 * 60 * 60 * 24 * 30;
     var now = Date.now();
-
-    return tideRetriever.fetchTideDates(new Date(now), new Date(now + oneMonth))
+    logger.info("Downloading new tide data");
+    return downloadTideData()
+      .then(parseTideData)
+      .catch(function(error) {
+        throw new Error("Failed to download tide data: " + error);
+      })
       .then(this.setTideDates.bind(this));
   },
 
@@ -33,9 +38,13 @@ module.exports = _.extend(new EventEmitter(), {
   // Returns a promise and causes a change event to be emitted.
   setTideDates: function(tideDates) {
     logger.info("Saving tide dates to MySQL server");
-    return storeTideDates(tideDates).then(function() {
-      logger.info("Tide dates successfully saved to MySQL server");
-      this.emit("change", tideDates);
-    }.bind(this));
+    return storeTideDates(tideDates)
+      .then(function() {
+        logger.info("Tide dates successfully saved to MySQL server");
+        this.emit("change", tideDates);
+      }.bind(this))
+      .catch(function(error) {
+        throw new Error("Failed to save tide data to MySQL server: " + error);
+      });
   }
 });

@@ -31,68 +31,75 @@
  */
 
 var _ = require("lodash");
-var logger = require("./logger")("tide-retriever");
-var tideParser = require("./tide-parser");
 var http = require("http");
 var config = require("./config-manager").getConfig().NOAARequest;
 var requestURLBase = "http://opendap.co-ops.nos.noaa.gov/ioos-dif-sos/SOS?";
 var isoStringMSRegex = /\.\d\d\dZ$/; // needed to remove milliseconds from date#toISOString
 var requestTimeout = 10000;
 
+// wrapped http.get in a promise
 function get(url) {
-    return new Promise(function(resolve, reject) {
-        return http.get(url, function(res) {
-            var buffer = "";
-            res.on("data", function(chunk) {
-                buffer += chunk;
-            });
+  return new Promise(function(resolve, reject) {
+    return http.get(url, function(res) {
+      var buffer = "";
+      res.on("data", function(chunk) {
+        buffer += chunk;
+      });
 
-            res.on("end", function() {
-                resolve(buffer);
-            });
-        }).on("error", reject);
-    });
+      res.on("end", function() {
+        resolve(buffer);
+      });
+    }).on("error", reject);
+  });
 }
 
 // Generates the "eventTime" parameter for the get request
 // Takes two javascript dates
 // Return value should be a string formatted like: "2000-00-00T00:00:00Z/2000-00-00T00:00:00Z"
-function getEventTime(from, too) {
-    return from.toISOString().replace(isoStringMSRegex, "Z") + "/" + too.toISOString().replace(isoStringMSRegex, "Z");
+function getEventTime(startDate, endDate) {
+  return startDate.toISOString().replace(isoStringMSRegex, "Z") + "/" + endDate.toISOString().replace(isoStringMSRegex, "Z");
 }
 
 // Generates the request URL for tide data between two dates
 // see _config.json "NOAARequest" for NOAA settings used in request
-function getRequestURL(from, too) {
-    return _.reduce(config, function(requestURL, value, key, index) {
-        if(index) {
-            requestURL += "&";
-        }
-        if(key === "eventTime") {
-            return requestURL + key + "=" + getEventTime(from, too);
-        }
-        else {
-            return requestURL + key + "=" + value;
-        }
-    }, requestURLBase);
+function getRequestURL(startDate, endDate) {
+  return _.reduce(config, function(requestURL, value, key, index) {
+    if(index) {
+      requestURL += "&";
+    }
+    if(key === "eventTime") {
+      return requestURL + key + "=" + getEventTime(startDate, endDate);
+    }
+    else {
+      return requestURL + key + "=" + value;
+    }
+  }, requestURLBase);
 }
 
-// Requests tide entries from NOAA between two dates
-// Dates should be javascript date objects
-// Returns a promise that resolves the retrieved tide entries as an array of javascript dates
-function fetchTideDates(from, too) {
-    var url = getRequestURL(from, too)
-    logger.info("Requesting tide data from: '" + url + "'");
-    return get(url)
-        .then(function(rawTideData) {
-            logger.info("Successfully retrieved tide data");
-            return tideParser.parse(rawTideData);
-        })
-        .catch(function(error) {
-            return Promise.reject(new Error("Failed to fetch tide data from NOAA's servers: " + error.message));
-        });
+/* 
+  Requests tide entries from NOAA between two dates
+  Dates should be javascript date objects
+  
+  Options:
+    from
+
+  Returns: Promise
+    resolves: String - Raw tide data
+*/
+function downloadTideData(options) {
+  var startDate = options.startDate;
+  var endDate = options.endDate;
+
+  if(!startDate || !endDate) {
+    throw new Error("startDate and endDate are required arguments");
+  }
+
+  var url = getRequestURL(startDate, endDate);
+  return get(url).catch(function(error) {
+    if(error.code === "EAI_AGAIN") {
+      throw new Error("EAI_AGAIN - DNS Lookup failed (is the module connected to the internet?)");
+    }
+  });
 }
 
-module.exports = {
-    fetchTideDates: fetchTideDates
-};
+module.exports = downloadTideData;

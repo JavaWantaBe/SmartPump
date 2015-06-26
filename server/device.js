@@ -39,6 +39,7 @@ function attachInterrupt(pin, handler, mode, callback) {
 
 module.exports = {
   digitalWrite: digitalWrite,
+  digitalRead: b.digitalRead,
   detachInterrupt: detachInterrupt,
   attachInterrupt: attachInterrupt,
   LOW: b.LOW,
