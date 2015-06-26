@@ -110,7 +110,14 @@ function getDeviceIO() {
 function closeValves(pumps) {
   return Q.all(_.map(pumps, function(pump) {
     return pump.valve.close();
-  }));
+  }))
+  .then(function() {
+    console.log("Valves closed");
+  })
+  .catch(function(error) {
+    console.log("Failed to close valves: " + error);
+    throw error;
+  });
 }
 
 function runPrimeCycle(startOutput, endInput) {
@@ -118,7 +125,13 @@ function runPrimeCycle(startOutput, endInput) {
   return pinCycle(
     startOutput, endInput,
     configManager.getConfig().pumpTimeouts.primeTimeOut
-  );
+  )
+  .then(function() {
+    console.log("Prime cycle finished successfully");
+  })
+  .catch(function(error) {
+    console.log("Prime cycle failed: " + error);
+  });
 }
 
 /*
