@@ -142,6 +142,7 @@ function monitorFlow(pump, tankIsFull, pressure) {
     Q.Promise(function(resolve, reject) { // timeout
       timeout = setTimeout(function() {
         console.log("monitorFlow timeout finished");
+        cleanupMonitorFlow();
         reject(new Error("Pump timed out"));
       });
     }),
@@ -149,6 +150,7 @@ function monitorFlow(pump, tankIsFull, pressure) {
     Q.Promise(function(resolve, reject) { // pressure
       pressure.once(function() {
         console.log("pressure received signal");
+        cleanupMonitorFlow();
         reject(new Error("Low pressure")); // TODO: Figure out what goes here
       });
     }),
@@ -156,10 +158,11 @@ function monitorFlow(pump, tankIsFull, pressure) {
     Q.Promise(function(resolve, reject) { // tank full
       tankIsFull.once(function() {
         console.log("tankIsFull received signal");
+        cleanupMonitorFlow();
         resolve();
       });
     })
-  ]).finally(cleanupMonitorFlow);
+  ]);
 }
 
 function cleanUp(outputPins) {
