@@ -97,7 +97,7 @@ function getDeviceIO() {
   );
 
   return {
-    pumps: [pump1, pump2]
+    pumps: [pump1, pump2],
     outputPins: outputPins,
     inputPins: inputPins
   };
