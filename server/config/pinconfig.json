@@ -3,84 +3,92 @@
         "relay1": {
             "label": "pump1",
             "pin": "P9_12",
-            "active": "high"
+            "active": 1
         },
         "relay2": {
             "label": "valve1open",
             "pin": "P9_15",
-            "active": "high"
+            "active": 1
         },
         "relay3": {
             "label": "valve1close",
             "pin": "P9_23",
-            "active": "high"
+            "active": 1
         },
         "relay4": {
             "label": "prime",
             "pin": "P8_9",
-            "active": "high"
+            "active": 1
         },
         "relay5": {
             "label": "pump2",
             "pin": "P9_27",
-            "active": "high"
+            "active": 1
         },
         "relay6": {
             "label": "valve2close",
             "pin": "P9_41",
-            "active": "high"
+            "active": 1
         },
         "relay7": {
             "label": "valve2open",
             "pin": "P8_7",
-            "active": "high"
+            "active": 1
         },
         "relay8": {
             "label": "spare",
             "pin": "P9_42",
-            "active": "high"
+            "active": 1
         }
     },
     "inputs": {
         "input1": {
             "label": "emergency",
             "pin": "P8_15",
-            "active": "low"
+            "active": 1,
+            "irq": "rising"
         },
         "input2": {
             "label": "pressure",
             "pin": "P8_11",
-            "active": "low"
+            "active": 0,
+            "irq": "falling"
         },
         "input3": {
             "label": "primed",
             "pin": "P8_14",
-            "active": "low"
+            "active": 0,
+            "irq": "falling"
         },
         "input4": {
             "label": "tankfull",
             "pin": "P8_12",
-            "active": "high"
+            "active": 1,
+            "irq": "falling"
         },
         "input5": {
             "label": "valve1opened",
             "pin": "P8_16",
-            "active": "low"
+            "active": 0,
+            "irq": "falling"
         },
         "input6": {
             "label": "valve1closed",
             "pin": "P8_17",
-            "active": "low"
+            "active": 0,
+            "irq": "falling"
         },
         "input7": {
             "label": "valve2opened",
             "pin": "P8_18",
-            "active": "low"
+            "active": 0,
+            "irq": "falling"
         },
         "input8": {
             "label": "valve2closed",
             "pin": "P8_26",
-            "active": "low"
+            "active": 0,
+            "irq": "falling"
         }
     }
 }

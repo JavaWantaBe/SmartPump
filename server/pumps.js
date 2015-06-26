@@ -90,7 +90,7 @@ function timedInterrupt(pin, mode, timeoutMS) {
         // start timeout
         Q.promise(function(resolve, reject) {
             time = setTimeout(function() {
-                reject(new Error("interrupt timed out"));
+                reject(new Error("interrupt timed out on pin - " + pin));
             }, timeoutMS);
         }),
         // attach interrupt
@@ -249,7 +249,8 @@ function emergencyStop(state) {
 function startcycle(tidetime) {
 
     var QUERYSTRING = "SELECT pump_used FROM pump_cycle ORDER BY pump_used DESC LIMIT 1",
-        INSERTSTRING = "INSERT INTO pump_cycle ( pump_used, avg_gpm, total_gallons, total_pumping_time, tide_tide_time ) VALUES(",
+        INSERTSTRING = "INSERT INTO pump_cycle ( pump_used, avg_gpm, total_gallons, \
+                total_pumping_time, tide_tide_time ) VALUES( ",
         pump = "pump1",
         pumpPin = getPin(settings.relays, "pump1"), // Pump last used
         valveOpen = getPin(settings.relays, "valve1open"), // Pump outlet valve last used
@@ -257,10 +258,16 @@ function startcycle(tidetime) {
         valveClose = getPin(settings.relays, "valve1close" ),
         valveCloseSignal = getPin(settings.inputs, "valve1closed" ),
         startTime = new Date();
-
+    
+    // First check to see if tank is full    
+    if(b.digitalRead(getPin(settings.inputs, "tankfull")) === b.HIGH) {
+        logger.info("Tank sensor registerd full");
+        return Q.resolve("Tank full");
+    }
+        
     return db.query(QUERYSTRING).then(function(result) {
-        //pump = result[0].pump_used;
-
+        pump = result[0].pump_used || 'pump1';
+        
         if(pump === 'pump1') {
             pumpPin = getPin(settings.relays, "pump2");
             valveOpen = getPin(settings.relays, "valve2open");
@@ -284,12 +291,29 @@ function startcycle(tidetime) {
              catch call, so you don't need to handle each .then's
              error seperately.
              */
-            logger.error("Error: " + err);
-        } ).finally( function(){
-            var endTime = new Date();
+            logger.error(err);
+        } )
+        .finally( function(){
+            var totalTime = Math.floor((Date.now() - startTime) / 1000),
+                hours, minutes, seconds;  
+                
+            hours   = Math.floor(totalTime / 3600);
+            minutes = Math.floor((totalTime - (hours * 3600)) / 60);
+            seconds = Math.floor((totalTime - (hours * 3600) - (minutes * 60)));
+            
+            function pad(n) {
+                return (n < 10) ? ("0" + n) : n;
+            }
+            
+            db.query(INSERTSTRING + "'" + pump + "', 0, 0, '" + pad(hours) + 
+                ":" + pad(minutes) + ":" + pad(seconds) +"', '" + 
+                tidetime + "' )");
             cleanup();
-            //db.query(INSERTSTRING + pump + ", 0, 0, " + new Date( endTime - startTime ) + " , " + tidetime);
         });
+}
+
+function _irqHandler( signal ){
+    console.log( JSON.stringify(signal));
 }
 
 /**
@@ -313,18 +337,17 @@ module.exports = {
          returns true for every value in the collection
          */
         var relaysAreValid = _.every(settings.relays, function(relay) {
-            return b.pinMode(relay.pin, b.OUTPUT, 7, 'pulldown', 'fast');
+            return b.pinMode(relay.pin, b.OUTPUT, 7, 'pulldown', 'fast', function(x){
+                b.digitalWrite(relay.pin, !relay.active);
+            });
         });
 
         var inputsAreValid = _.every(settings.inputs, function(signal) {
-            return b.pinMode(signal.pin, b.INPUT, 7, 'pullup', 'fast');
+            return b.pinMode(signal.pin, b.INPUT, 7, 'pullup', 'fast', function(x){
+                logger.debug("Status of pin : " + signal.label + " = " + b.digitalRead(signal.pin));
+                b.attachInterrupt(signal.pin, _irqHandler, signal.irq);
+            });
         });
-
-        _.forEach(settings.relays, function(relay) {
-            b.digitalWrite(relay.pin, b.LOW);
-        });
-
-        b.attachInterrupt(getPin(settings.inputs, "emergency"), emergencyStop, b.RISING);
 
         if(relaysAreValid && inputsAreValid) {
             logger.debug("pump pins initialized");
@@ -334,7 +357,7 @@ module.exports = {
             throw new Error("pump pin assignment failed");
         }
         
-        startcycle( Date.now() );
+        startcycle('2015-06-23 00:42:00');
 
     },
     start: startcycle
