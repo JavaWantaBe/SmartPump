@@ -129,13 +129,13 @@ function runPrimeCycle(startOutput, endInput) {
   I moved the delay from this function
   to the "starCycle" function.
 */
-function monitorFlow(pump) {
+function monitorFlow(pump, tankIsFull, pressure) {
   var timeout;
 
   function cleanupMonitorFlow() {
     clearTimeout(timeout);
-    inputs.tankIsFull.detach();
-    inputs.pressure.detach();
+    tankIsFull.detach();
+    pressure.detach();
   }
 
   return Q.race([
@@ -146,13 +146,13 @@ function monitorFlow(pump) {
     }),
 
     Q.Promise(function(resolve, reject) { // pressure
-      inputs.pressure.once(function() {
+      pressure.once(function() {
         reject(new Error("Low pressure")); // TODO: Figure out what goes here
       });
     }),
 
     Q.Promise(function(resolve, reject) { // tank full
-      inputs.tankIsFull.once(function() {
+      tankIsFull.once(function() {
         resolve();
       });
     })
@@ -177,12 +177,12 @@ function startCycle() {
     .then(runPrimeCycle.bind(null, outputPins.startPrime, inputPins.primeFinished))
     .then(pump.start)
     .then(wait.bind(null, 30000))
-    .then(monitorFlow.bind(null, pump))
+    .then(monitorFlow.bind(null, pump, inputPins.tankIsFull, inputPins.pressure))
     .then(pump.stop)
     .then(wait.bind(null, 1000 * 60 * 5))
-    .catch(function(error) {
-      throw new Error("Pump cycle failed: " + error);
-    })
+    //.catch(function(error) {
+    //  throw new Error("Pump cycle failed: " + error);
+    //})
     .finally(cleanUp.bind(null, outputPins));
 }
 
