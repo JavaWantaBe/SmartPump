@@ -47,6 +47,7 @@ _.extend(Valve.prototype, {
   */
   close: function() {
     if(this.closeSuccessInput.read() === device.LOW) { // check if already closed
+      console.log("closeSuccessInput is already low");
       return Q.resolve();
     }
     return pinCycle(this.closeOutput, this.closeSuccessInput, this.closeTimeoutMS);
