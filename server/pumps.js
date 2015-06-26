@@ -198,6 +198,8 @@ module.exports = {
       _.each(pins.inputs, function(input) {
           device.pinMode(input.pin, device.INPUT, 7, "pullup", "fast");
       });
+
+      return Q.resolve();
   },
 
   startCycle: startCycle
