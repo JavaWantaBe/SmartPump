@@ -54,7 +54,7 @@
       },
       "pressure": {
         "pin": "P8_11",
-        "handler": "LOW",
+        "handler": "HIGH",
         "mode": "RISING"
       },
       "primeFinished": {
