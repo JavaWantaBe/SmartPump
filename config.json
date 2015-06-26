@@ -49,7 +49,7 @@
     "inputs": {
       "emergencyStop": {
         "pin": "P8_15",
-        "handler": "LOW",
+        "handler": "HIGH",
         "mode": "RISING"
       },
       "pressure": {
@@ -70,7 +70,7 @@
       "valve1Opened": {
         "pin": "P8_16",
         "handler": "LOW",
-        "mode": "RISING"
+        "mode": "FALLING"
       },
       "valve1Closed": {
         "pin": "P8_17",
@@ -80,7 +80,7 @@
       "valve2Opened": {
         "pin": "P8_18",
         "handler": "LOW",
-        "mode": "RISING"
+        "mode": "FALLING"
       },
       "valve2Closed": {
         "pin": "P8_26",

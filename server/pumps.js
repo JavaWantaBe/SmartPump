@@ -114,6 +114,7 @@ function closeValves(pumps) {
 }
 
 function runPrimeCycle(startOutput, endInput) {
+  console.log("Running prime cycle");
   return pinCycle(
     startOutput, endInput,
     configManager.getConfig().pumpTimeouts.primeTimeOut
