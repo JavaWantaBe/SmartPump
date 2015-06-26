@@ -163,7 +163,7 @@ function monitorFlow(pump, tankIsFull, pressure) {
         console.log("monitorFlow timeout finished");
         cleanupMonitorFlow();
         reject(new Error("Pump timed out"));
-      });
+      }, configManager.getConfig().pumpTimeouts.pumpingTimeOut);
     }),
 
     Q.Promise(function(resolve, reject) { // pressure
