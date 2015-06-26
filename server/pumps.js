@@ -113,10 +113,9 @@ function closeValves(pumps) {
   }));
 }
 
-function runPrimeCycle() {
+function runPrimeCycle(startOutput, endInput) {
   return pinCycle(
-    outputPins.startPrime,
-    inputPins.primeFinished,
+    startOutput, endInput,
     configManager.getConfig().pumpTimeouts.primeTimeOut
   );
 }
@@ -175,7 +174,7 @@ function startCycle() {
   pump = pumps[currentPumpId];
 
   return closeValves(pumps)
-    .then(runPrimeCycle)
+    .then(runPrimeCycle.bind(null, outputPins.startPrime, inputPins.primeFinished))
     .then(pump.start)
     .then(wait.bind(null, 30000))
     .then(monitorFlow.bind(null, pump))
