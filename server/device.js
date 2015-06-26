@@ -11,6 +11,12 @@
 
 var b = require("bonescript");
 
+function pinMode(pin, mode, muxMode, pullDirection, skew, callback) {
+  if(!b.pinMode(pin, mode, muxMode, pullDirection, skew, callback)) {
+    throw new Error("Failed to set pin mode on pin " + pin);
+  }
+}
+
 /*
   This function does not need to return
   a promise if it's not actually asynchronous.
@@ -38,6 +44,7 @@ function attachInterrupt(pin, handler, mode, callback) {
 }
 
 module.exports = {
+  pinMode: pinMode,
   digitalWrite: digitalWrite,
   digitalRead: b.digitalRead,
   detachInterrupt: detachInterrupt,
@@ -45,5 +52,7 @@ module.exports = {
   LOW: b.LOW,
   HIGH: b.HIGH,
   FALLING: b.FALLING,
-  RISING: b.RISING
+  RISING: b.RISING,
+  OUTPUT: b.OUTPUT,
+  INPUT: b.INPUT
 };

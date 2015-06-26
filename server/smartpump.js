@@ -46,6 +46,7 @@ status.init()
     .then(db.connect)
     .then(log("info", "Successfully connected to mysql server"))
     .then(initializePumps)
+    .then(log("info", "Sucessfully initialized pumps"))
     .then(webserver.init)
     .then(log("info", "Sucessfully initialized webserver"))
     .then(function() {
@@ -56,7 +57,8 @@ status.init()
                 setTimeout(run, 0);
             }).catch(fatalErrorHandler);
         }
-        
+        run();
+
         configManager.on("change", function() {
             logger.info("Configuration changed. Restarting scheduler");
             scheduler.stop();
@@ -67,6 +69,5 @@ status.init()
             scheduler.stop();
         });
 
-        run();
     })
     .catch(fatalErrorHandler);

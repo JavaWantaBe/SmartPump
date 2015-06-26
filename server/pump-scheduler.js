@@ -3,6 +3,7 @@ var Job = require("node-schedule").Job;
 var configManager = require("./config-manager");
 var tideManager = require("./tide-manager");
 var logger = require("./logger")("pump-scheduler");
+var pumps = require("./pumps");
 var oneMonth = 2592000000; // milliseconds in a month
 var currentJob = null;
 
@@ -31,14 +32,15 @@ function start() {
     .then(function(date) {
       var manualMode = configManager.getConfig().manualMode;
 
-      //date = new Date(Date.now() + 10000);
+      date = new Date(Date.now() + 10000);
 
       if(isValidDate(date)) {
         logger.info("Scheduling pump job for '" + date + "'");
         return Q.promise(function(resolve, reject) {
           currentJob = new Job(function() {
             logger.info("Starting pumps");
-            setTimeout(resolve.bind(null, false), 3000);
+            //setTimeout(resolve.bind(null, false), 3000);
+            return pumps.startCycle().then(resolve, reject);
           })
           .on("canceled", resolve.bind(null, true))
           .on("error", reject);

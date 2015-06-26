@@ -1,4 +1,5 @@
 var Q = require("q");
+var _ = require("lodash");
 var device = require("./device");
 var InputPin = require("./hardware-models/input-pin");
 var OutputPin = require("./hardware-models/output-pin");
@@ -38,7 +39,7 @@ function wait(ms) {
 */
 function getPumps() {
   var config = configManager.getConfig();
-  var pinConfig = config.pins;
+  var pins = config.pins;
   var timeouts = config.pumpTimeouts;
 
   // generate Pin objects from the pin configuration in config.json
@@ -103,11 +104,10 @@ function getPumps() {
 
 // was "preCycle". I chose a name that describes what the function does, not when it's called
 // timing out and turning off pins are both handled by the Valve close function
-function closeValves() {
-  return Q.all([
-    pump1.valve.close(),
-    pump2.valve.close()
-  ]);
+function closeValves(pumps) {
+  return Q.all(_.map(pumps, function(pump) {
+    return pump.valve.close();
+  }));
 }
 
 function runPrimeCycle() {
@@ -145,7 +145,7 @@ function monitorFlow(pump) {
 
     Q.Promise(function(resolve, reject) { // pressure
       inputs.pressure.once(function() {
-        reject(new Error("Too much pressure?")); // TODO: Figure out what goes here
+        reject(new Error("Low pressure")); // TODO: Figure out what goes here
       });
     }),
 
@@ -168,7 +168,7 @@ function startCycle() {
   currentPumpId = currentPumpId === "pump1" ? "pump2" : "pump1";
   pump = pumps[currentPumpId];
 
-  return closeValves()
+  return closeValves(pumps)
     .then(runPrimeCycle)
     .then(pump.start)
     .then(wait.bind(null, 30000))
@@ -181,3 +181,33 @@ function startCycle() {
     .finally(cleanUp);
 }
 
+
+module.exports = {
+  init: function() {
+    var pins = configManager.getConfig().pins;
+      /*
+       _.every returns true only if the iterator function
+       returns true for every value in the collection
+       */
+      var outputsAreValid = _.every(pins.outputs, function(output) {
+          return device.pinMode(output.pin, device.OUTPUT, 7, "pulldown", "fast", function(x){
+              device.digitalWrite(output.pin, output.offValue === "LOW" ? LOW : HIGH);
+          });
+      });
+
+      var inputsAreValid = _.every(pins.inputs, function(input) {
+          return device.pinMode(input.pin, device.INPUT, 7, "pullup", "fast");
+      });
+
+      if(outputsAreValid && inputsAreValid) {
+          logger.debug("pump pins initialized");
+      } else {
+          logger.error("pump pin assignment failed");
+          throw new Error("pump pin assignment failed");
+      }
+      
+      //startCycle();
+  },
+
+  startCycle: startCycle
+};

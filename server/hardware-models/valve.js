@@ -1,7 +1,7 @@
 var _ = require("lodash");
 var Q = require("q");
 var pinCycle = require("./pin-cycle");
-var device = require("device");
+var device = require("../device");
 
 /*
   params:
