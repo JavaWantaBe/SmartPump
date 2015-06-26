@@ -1,7 +1,5 @@
-"use strict";
-
 /**
- * @file tide-retriever.js
+ * @file download-tide-data.js
  * @brief Private Module Used by: server/pump-scheduler
  *
  *  This module's job is to provide a simple means for fetching raw tide data from NOAA.
@@ -31,6 +29,7 @@
  */
 
 var _ = require("lodash");
+var Q = require("q");
 var http = require("http");
 var config = require("./config-manager").getConfig().NOAARequest;
 var requestURLBase = "http://opendap.co-ops.nos.noaa.gov/ioos-dif-sos/SOS?";
@@ -39,7 +38,7 @@ var requestTimeout = 10000;
 
 // wrapped http.get in a promise
 function get(url) {
-  return new Promise(function(resolve, reject) {
+  return Q.Promise(function(resolve, reject) {
     return http.get(url, function(res) {
       var buffer = "";
       res.on("data", function(chunk) {
