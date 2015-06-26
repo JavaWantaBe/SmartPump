@@ -204,7 +204,8 @@ function startCycle() {
     .then(runPrimeCycle.bind(null, outputPins.startPrime, inputPins.primeFinished))
     .then(function() {
       console.log("Starting pump");
-      return pump.start()
+      return Q.resolve()
+        .then(pump.start.bind(pump))
         .then(log("Pump started successfully"))
         .catch(logError("Failed to start pump"));
     })
