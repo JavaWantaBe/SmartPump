@@ -1,5 +1,4 @@
 var Q = require("q");
-var
 var _ = require("lodash");
 var device = require("./device");
 var InputPin = require("./hardware-models/input-pin");
