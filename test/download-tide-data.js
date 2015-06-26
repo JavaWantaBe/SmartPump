@@ -5,6 +5,7 @@ describe("downloadTideData", function() {
   it("should download comma seperated tide data", function(done) {
     var startDate = new Date(1435290032441);
     var endDate = new Date(1436154032441);
+    this.timeout(10000);
 
     downloadTideData({
       startDate: startDate,
@@ -16,7 +17,6 @@ describe("downloadTideData", function() {
         done("Data does not match test data");
       }
     }).catch(function(error) {
-      console.log(Object.keys(error), error.code, error.errno);
       done(error);
     });
   });
