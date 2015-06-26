@@ -189,19 +189,15 @@ module.exports = {
        _.every returns true only if the iterator function
        returns true for every value in the collection
        */
-      var outputsAreValid = _.every(pins.outputs, function(output) {
-          return device.pinMode(output.pin, device.OUTPUT, 7, "pulldown", "fast", function(x){
+      _.each(pins.outputs, function(output) {
+          device.pinMode(output.pin, device.OUTPUT, 7, "pulldown", "fast", function(x){
               device.digitalWrite(output.pin, output.offValue === "LOW" ? LOW : HIGH);
           });
       });
 
-      var inputsAreValid = _.every(pins.inputs, function(input) {
-          return device.pinMode(input.pin, device.INPUT, 7, "pullup", "fast");
+      _.each(pins.inputs, function(input) {
+          device.pinMode(input.pin, device.INPUT, 7, "pullup", "fast");
       });
-
-      if(!outputsAreValid || !inputsAreValid) {
-          throw new Error("pump pin assignment failed");
-      }
   },
 
   startCycle: startCycle
