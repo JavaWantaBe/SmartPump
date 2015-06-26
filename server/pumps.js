@@ -90,7 +90,7 @@ function timedInterrupt(pin, mode, timeoutMS) {
         // start timeout
         Q.promise(function(resolve, reject) {
             time = setTimeout(function() {
-                reject(new Error("interrupt timed out on pin - " + pin));
+                reject(new Error("Interrupt timed out on pin - " + pin));
             }, timeoutMS);
         }),
         // attach interrupt
@@ -251,7 +251,7 @@ function startcycle(tidetime) {
     var QUERYSTRING = "SELECT pump_used FROM pump_cycle ORDER BY pump_used DESC LIMIT 1",
         INSERTSTRING = "INSERT INTO pump_cycle ( pump_used, avg_gpm, total_gallons, \
                 total_pumping_time, tide_tide_time ) VALUES( ",
-        pump = "pump1",
+        pump,
         pumpPin = getPin(settings.relays, "pump1"), // Pump last used
         valveOpen = getPin(settings.relays, "valve1open"), // Pump outlet valve last used
         valveOpenSignal = getPin(settings.inputs,"valve1opened" ),
@@ -266,7 +266,7 @@ function startcycle(tidetime) {
     }
         
     return db.query(QUERYSTRING).then(function(result) {
-        pump = result[0].pump_used || 'pump1';
+        pump = result.length > 0 ? result[0].pump_used : 'pump1';
         
         if(pump === 'pump1') {
             pumpPin = getPin(settings.relays, "pump2");
@@ -284,18 +284,17 @@ function startcycle(tidetime) {
         .then(startPump.bind(null, pumpPin, valveOpen, valveOpenSignal))
         .then(monitorFlow.bind(null, pumpPin))
         .then(endCycle.bind(null, valveClose, valveCloseSignal))
-        .catch(function(err) {
+        .catch(function(err){
             /*
              I removed the many additional error handlers.
              Errors will cascade through .then calls until they hit a
              catch call, so you don't need to handle each .then's
              error seperately.
              */
-            logger.error(err);
+            logger.error(" " + err);
         } )
         .finally( function(){
             var totalTime = Math.floor((Date.now() - startTime) / 1000),
-<<<<<<< 642181c21b110cf9e7babfa353a0c9dda9815a9f
                 hours, minutes, seconds;  
                 
             hours   = Math.floor(totalTime / 3600);
@@ -309,21 +308,6 @@ function startcycle(tidetime) {
             db.query(INSERTSTRING + "'" + pump + "', 0, 0, '" + pad(hours) + 
                 ":" + pad(minutes) + ":" + pad(seconds) +"', '" + 
                 tidetime + "' )");
-=======
-                hours, minutes, seconds;
-
-            hours   = Math.floor(totalTime / 3600);
-            minutes = Math.floor((totalTime - (hours * 3600)) / 60);
-            seconds = Math.floor((totalTime - (hours * 3600) - (minutes * 60)));
-
-            function pad(n) {
-                return (n < 10) ? ("0" + n) : n;
-            }
-
-            db.query(INSERTSTRING + "'" + pump + "', 0, 0, '" + pad(hours) +
-            ":" + pad(minutes) + ":" + pad(seconds) +"', '" +
-            tidetime + "' )");
->>>>>>> d3ad05bf19aef8903a2acaab16d3c57aa6c72c15
             cleanup();
         });
 }
@@ -367,8 +351,7 @@ module.exports = {
 
         if(relaysAreValid && inputsAreValid) {
             logger.debug("pump pins initialized");
-        }
-        else {
+        } else {
             logger.error("pump pin assignment failed");
             throw new Error("pump pin assignment failed");
         }
