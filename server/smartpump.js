@@ -38,7 +38,7 @@ function initializePumps() {
 }
 
 function fatalErrorHandler(error) {
-    logger.error("FATAL " + error);
+    logger.error("FATAL " + error + ": " + error.stack);
 }
 
 status.init()
