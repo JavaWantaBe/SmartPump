@@ -1,4 +1,5 @@
 var Q = require("q");
+var
 var _ = require("lodash");
 var device = require("./device");
 var InputPin = require("./hardware-models/input-pin");
@@ -199,14 +200,9 @@ module.exports = {
           return device.pinMode(input.pin, device.INPUT, 7, "pullup", "fast");
       });
 
-      if(outputsAreValid && inputsAreValid) {
-          logger.debug("pump pins initialized");
-      } else {
-          logger.error("pump pin assignment failed");
+      if(!outputsAreValid || !inputsAreValid) {
           throw new Error("pump pin assignment failed");
       }
-      
-      //startCycle();
   },
 
   startCycle: startCycle
