@@ -61,7 +61,7 @@ create a new user:
 
 ```mysql
 mysql> CREATE USER 'smartpump'@'localhost' IDENTIFIED BY 'foobar123';
-mysql> GRANT SELECT, DELETE, UPDATE, INSERT ON 'smartpump.*' TO 'smartpump'@'localhost';
+mysql> GRANT SELECT, DELETE, UPDATE, INSERT, EXECUTE ON smartpump.* TO 'smartpump'@'localhost';
 ```
 
 ## Cape DeviceTree

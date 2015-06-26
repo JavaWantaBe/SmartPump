@@ -1,8 +1,9 @@
 "use strict";
 
 /**
- * @file
- * @brief Database Connectivity
+ * @file database.js
+ *
+ * @brief Database connectivity and query functions
  *
  * @type {exports}
  * @private
