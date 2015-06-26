@@ -209,7 +209,10 @@ function startCycle() {
         .then(log("Pump started successfully"))
         .catch(logError("Failed to start pump"));
     })
-    .then(wait.bind(null, 30000))
+    .then(function() {
+      console.log("Waiting to monitor flow");
+      return wait(1000);
+    })
     .then(monitorFlow.bind(null, pump, inputPins.tankIsFull, inputPins.pressure))
     .then(function() {
       return pump.stop()

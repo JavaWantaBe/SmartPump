@@ -32,6 +32,10 @@ _.extend(InputPin.prototype, {
     Returns: null
   */
   attach: function(callback) {
+    if(this.handler({value: this.read()})) {
+      callback();
+      return;
+    }
     if(this._isAttached) {
       console.log("Warning: attaching an interrupt to a pin that already has an interrupt attached: " + this.pin);
     }
