@@ -141,18 +141,21 @@ function monitorFlow(pump, tankIsFull, pressure) {
   return Q.race([
     Q.Promise(function(resolve, reject) { // timeout
       timeout = setTimeout(function() {
+        console.log("monitorFlow timeout finished");
         reject(new Error("Pump timed out"));
       });
     }),
 
     Q.Promise(function(resolve, reject) { // pressure
       pressure.once(function() {
+        console.log("pressure received signal");
         reject(new Error("Low pressure")); // TODO: Figure out what goes here
       });
     }),
 
     Q.Promise(function(resolve, reject) { // tank full
       tankIsFull.once(function() {
+        console.log("tankIsFull received signal");
         resolve();
       });
     })
