@@ -295,6 +295,7 @@ function startcycle(tidetime) {
         } )
         .finally( function(){
             var totalTime = Math.floor((Date.now() - startTime) / 1000),
+<<<<<<< 642181c21b110cf9e7babfa353a0c9dda9815a9f
                 hours, minutes, seconds;  
                 
             hours   = Math.floor(totalTime / 3600);
@@ -308,6 +309,21 @@ function startcycle(tidetime) {
             db.query(INSERTSTRING + "'" + pump + "', 0, 0, '" + pad(hours) + 
                 ":" + pad(minutes) + ":" + pad(seconds) +"', '" + 
                 tidetime + "' )");
+=======
+                hours, minutes, seconds;
+
+            hours   = Math.floor(totalTime / 3600);
+            minutes = Math.floor((totalTime - (hours * 3600)) / 60);
+            seconds = Math.floor((totalTime - (hours * 3600) - (minutes * 60)));
+
+            function pad(n) {
+                return (n < 10) ? ("0" + n) : n;
+            }
+
+            db.query(INSERTSTRING + "'" + pump + "', 0, 0, '" + pad(hours) +
+            ":" + pad(minutes) + ":" + pad(seconds) +"', '" +
+            tidetime + "' )");
+>>>>>>> d3ad05bf19aef8903a2acaab16d3c57aa6c72c15
             cleanup();
         });
 }
