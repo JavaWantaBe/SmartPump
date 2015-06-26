@@ -32,6 +32,19 @@ function wait(ms) {
   });
 }
 
+function logError(message) {
+  return function(error) {
+    console.log(message + ": " + error);
+    throw error;
+  };
+}
+
+function log(message) {
+  return function() {
+    console.log(message)
+  };
+}
+
 /*
   This function generates the InputPin, OutputPin, Valve, and Pump objects
   that we will need to run the pumps.
@@ -108,16 +121,12 @@ function getDeviceIO() {
 // was "preCycle". I chose a name that describes what the function does, not when it's called
 // timing out and turning off pins are both handled by the Valve close function
 function closeValves(pumps) {
+  console.log("Closing valves");
   return Q.all(_.map(pumps, function(pump) {
     return pump.valve.close();
   }))
-  .then(function() {
-    console.log("Valves closed");
-  })
-  .catch(function(error) {
-    console.log("Failed to close valves: " + error);
-    throw error;
-  });
+  .then(log("Valves closed"))
+  .catch(logError("Failed to close valves"));
 }
 
 function runPrimeCycle(startOutput, endInput) {
@@ -126,12 +135,8 @@ function runPrimeCycle(startOutput, endInput) {
     startOutput, endInput,
     configManager.getConfig().pumpTimeouts.primeTimeOut
   )
-  .then(function() {
-    console.log("Prime cycle finished successfully");
-  })
-  .catch(function(error) {
-    console.log("Prime cycle failed: " + error);
-  });
+  .then(log("Prime cycle finished"))
+  .catch(logError("Prime cycle failed"));
 }
 
 /*
@@ -145,7 +150,7 @@ function runPrimeCycle(startOutput, endInput) {
 */
 function monitorFlow(pump, tankIsFull, pressure) {
   var timeout;
-
+  console.log("Monitoring flow");
   function cleanupMonitorFlow() {
     clearTimeout(timeout);
     tankIsFull.detach();
@@ -173,10 +178,12 @@ function monitorFlow(pump, tankIsFull, pressure) {
       tankIsFull.once(function() {
         console.log("tankIsFull received signal");
         cleanupMonitorFlow();
-        resolve();
+        resolve("Tanks is full");
       });
     })
-  ]);
+  ])
+  .then(log("Pumping finished successfully (tank is full)"))
+  .catch(log("Pumping failed"));
 }
 
 function cleanUp(outputPins) {
@@ -195,14 +202,20 @@ function startCycle() {
 
   return closeValves(pumps)
     .then(runPrimeCycle.bind(null, outputPins.startPrime, inputPins.primeFinished))
-    .then(pump.start)
+    .then(function() {
+      console.log("Starting pump");
+      return pump.start()
+        .then(log("Pump started successfully"))
+        .catch(logError("Failed to start pump"));
+    })
     .then(wait.bind(null, 30000))
     .then(monitorFlow.bind(null, pump, inputPins.tankIsFull, inputPins.pressure))
-    .then(pump.stop)
+    .then(function() {
+      return pump.stop()
+        .then(log("Pump stopped successfully"))
+        .catch(logError("Failed to stop pump"));
+    })
     .then(wait.bind(null, 1000 * 60 * 5))
-    //.catch(function(error) {
-    //  throw new Error("Pump cycle failed: " + error);
-    //})
     .finally(cleanUp.bind(null, outputPins));
 }
 
