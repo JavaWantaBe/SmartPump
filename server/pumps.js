@@ -12,8 +12,10 @@ var LOW = device.LOW;
 var HIGH = device.HIGH;
 var FALLING = device.FALLING;
 var RISING = device.RISING;
+var PUMP1 = 0;
+var PUMP2 = 1;
 
-var currentPumpId = "pump1";
+var currentPumpId = PUMP1;
 
 // handler functions
 function isLow(signal) {
@@ -169,7 +171,7 @@ function startCycle() {
   var inputPins = deviceIO.inputPins;
   var pump;
   // switch pumps on each cycle
-  currentPumpId = currentPumpId === "pump1" ? "pump2" : "pump1";
+  currentPumpId = (currentPumpId === PUMP1 ? PUMP2 : PUMP1);
   pump = pumps[currentPumpId];
 
   return closeValves(pumps)
