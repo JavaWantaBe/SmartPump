@@ -35,7 +35,13 @@ _.extend(InputPin.prototype, {
     if(this._isAttached) {
       console.log("Warning: attaching an interrupt to a pin that already has an interrupt attached: " + this.pin);
     }
-    attachInterrupt(this.pin, this.handler, this.mode, callback);
+    attachInterrupt(this.pin, this.handler, this.mode, function() {
+      if(this._isAttached) {
+        callback();
+      } else {
+        console.log("interrupt callback fired while interrupt wasn't attached");
+      }
+    }.bind(this));
     this._isAttached = true;
   },
 
