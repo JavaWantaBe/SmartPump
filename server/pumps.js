@@ -37,7 +37,7 @@ function wait(ms) {
   These objects need to be recreated on each run in order to ensure that
   only the most up-to-date configuration is used
 */
-function getPumps() {
+function getDeviceIO() {
   var config = configManager.getConfig();
   var pins = config.pins;
   var timeouts = config.pumpTimeouts;
@@ -97,8 +97,9 @@ function getPumps() {
   );
 
   return {
-    pump1: pump1,
-    pump2: pump2
+    pumps: [pump1, pump2]
+    outputPins: outputPins,
+    inputPins: inputPins
   };
 }
 
@@ -157,12 +158,15 @@ function monitorFlow(pump) {
   ]).finally(cleanupMonitorFlow);
 }
 
-function cleanUp() {
+function cleanUp(outputPins) {
   _.invoke(outputPins, "turnOff"); // runs .turnOff() on all output pins
 }
 
 function startCycle() {
-  var pumps = getPumps();
+  var deviceIO = getDeviceIO();
+  var pumps = deviceIO.pumps;
+  var outputPins = deviceIO.outputPins;
+  var inputPins = deviceIO.inputPins;
   var pump;
   // switch pumps on each cycle
   currentPumpId = currentPumpId === "pump1" ? "pump2" : "pump1";
@@ -178,28 +182,25 @@ function startCycle() {
     .catch(function(error) {
       throw new Error("Pump cycle failed: " + error);
     })
-    .finally(cleanUp);
+    .finally(cleanUp.bind(null, outputPins));
 }
 
 
 module.exports = {
   init: function() {
     var pins = configManager.getConfig().pins;
-      /*
-       _.every returns true only if the iterator function
-       returns true for every value in the collection
-       */
-      _.each(pins.outputs, function(output) {
-          device.pinMode(output.pin, device.OUTPUT, 7, "pulldown", "fast", function(x){
-              device.digitalWrite(output.pin, output.offValue === "LOW" ? LOW : HIGH);
-          });
-      });
 
-      _.each(pins.inputs, function(input) {
-          device.pinMode(input.pin, device.INPUT, 7, "pullup", "fast");
-      });
+    _.each(pins.outputs, function(output) {
+        device.pinMode(output.pin, device.OUTPUT, 7, "pulldown", "fast", function(x){
+            device.digitalWrite(output.pin, output.offValue === "LOW" ? LOW : HIGH);
+        });
+    });
 
-      return Q.resolve();
+    _.each(pins.inputs, function(input) {
+        device.pinMode(input.pin, device.INPUT, 7, "pullup", "fast");
+    });
+
+    return Q.resolve();
   },
 
   startCycle: startCycle
