@@ -32,7 +32,7 @@ function start() {
     .then(function(date) {
       var manualMode = configManager.getConfig().manualMode;
 
-      date = new Date(Date.now() + 10000);
+      date = new Date(Date.now() + 3000);
 
       if(isValidDate(date)) {
         logger.info("Scheduling pump job for '" + date + "'");
