@@ -4,6 +4,7 @@ var configManager = require("./config-manager");
 var tideManager = require("./tide-manager");
 var logger = require("./logger")("pump-scheduler");
 var pumps = require("./pumps");
+var isBeagleBone = require("./global-status").onBeagleBone;
 var oneMonth = 2592000000; // milliseconds in a month
 var currentJob = null;
 
@@ -32,15 +33,19 @@ function start() {
     .then(function(date) {
       var manualMode = configManager.getConfig().manualMode;
 
-      date = new Date(Date.now() + 10000);
+      //date = new Date(Date.now() + 5000); // TODO: Remove this before we're finished
 
       if(isValidDate(date)) {
         logger.info("Scheduling pump job for '" + date + "'");
         return Q.promise(function(resolve, reject) {
           currentJob = new Job(function() {
             logger.info("Starting pumps");
-            //setTimeout(resolve.bind(null, false), 3000);
-            return pumps.startCycle().then(resolve, reject);
+            if(isBeagleBone()) {
+              return pumps.startCycle().then(resolve, reject);
+            } else { // for debugging without crashing
+              logger.info("Not running on beaglebone. Skipping pumping cycle.");
+              Q.delay(5000).then(resolve, reject);
+            }
           })
           .on("canceled", resolve.bind(null, true))
           .on("error", reject);

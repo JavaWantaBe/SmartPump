@@ -86,6 +86,7 @@ function getRequestURL(startDate, endDate) {
     resolves: String - Raw tide data
 */
 function downloadTideData(options) {
+  options = options || {};
   var startDate = options.startDate;
   var endDate = options.endDate;
 

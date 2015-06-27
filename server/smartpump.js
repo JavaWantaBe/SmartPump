@@ -57,7 +57,6 @@ status.init()
                 setTimeout(run, 0);
             }).catch(fatalErrorHandler);
         }
-        run();
 
         configManager.on("change", function() {
             logger.info("Configuration changed. Restarting scheduler");
@@ -68,6 +67,6 @@ status.init()
             logger.info("Tide data changed. Restarting scheduler");
             scheduler.stop();
         });
-
+        run();
     })
     .catch(fatalErrorHandler);
