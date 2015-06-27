@@ -7,6 +7,17 @@ var getNextTideDate = require("./queries/get-next-tide-date");
 var storeTideDates = require("./queries/store-tide-dates");
 var getTideDates = require("./queries/get-tide-dates");
 
+function saveTideDates(tideDates) {
+  logger.info("Saving tide dates to MySQL server");
+  return storeTideDates(tideDates)
+    .then(function() {
+      logger.info("Tide dates successfully saved to MySQL server");
+    }.bind(this))
+    .catch(function(error) {
+      throw new Error("Failed to save tide data to MySQL server: " + error);
+    });
+}
+
 /*
   This module should handle all getting/setting of tide dates.
 
@@ -21,30 +32,28 @@ module.exports = _.extend(new EventEmitter(), {
   // Returns a promise that resolves to an array of Date objects
   getTideDates: getTideDates,
   // Requests, parses, and stores tide dates from NOAA.
-  // Returns a promise and causes a change event to be emitted.
+  // Returns a promise, but does not cause an event to be emitted
   fetchNewTideDates: function() {
     var oneMonth = 1000 * 60 * 60 * 24 * 30;
     var now = Date.now();
     logger.info("Downloading new tide data");
-    return downloadTideData()
+    return downloadTideData({
+      startDate: new Date(now),
+      endDate: new Date(now + oneMonth)
+    })
       .then(parseTideData)
       .catch(function(error) {
         throw new Error("Failed to download tide data: " + error);
       })
-      .then(this.setTideDates.bind(this));
+      .then(saveTideDates);
   },
 
   // Stores the passed tide dates in the mysql server
   // Returns a promise and causes a change event to be emitted.
   setTideDates: function(tideDates) {
-    logger.info("Saving tide dates to MySQL server");
-    return storeTideDates(tideDates)
+    return saveTideDates(tideDates)
       .then(function() {
-        logger.info("Tide dates successfully saved to MySQL server");
         this.emit("change", tideDates);
-      }.bind(this))
-      .catch(function(error) {
-        throw new Error("Failed to save tide data to MySQL server: " + error);
       });
   }
 });
