@@ -19,18 +19,6 @@ CREATE SCHEMA IF NOT EXISTS `smartpump` DEFAULT CHARACTER SET utf8 COLLATE utf8_
 USE `smartpump` ;
 
 -- -----------------------------------------------------
--- Table `smartpump`.`tide`
--- -----------------------------------------------------
-DROP TABLE IF EXISTS `smartpump`.`tide` ;
-
-CREATE TABLE IF NOT EXISTS `smartpump`.`tide` (
-  `tide_time` TIMESTAMP NOT NULL COMMENT 'MySQL converts TIMESTAMP values from the current time zone to UTC for storage, and back from UTC to the current time zone for retrieval. (This does not occur for other types such as DATETIME.) By default, the current time zone for each connection is the s' /* comment truncated */ /*erver's time. The time zone can be set on a per-connection basis. As long as the time zone setting remains constant, you get back the same value you store. If you store a TIMESTAMP value, and then change the time zone and retrieve the value, the retrieved value is different from the value you stored.*/,
-  `data_download_date` DATETIME NOT NULL,
-  PRIMARY KEY (`tide_time`))
-ENGINE = InnoDB;
-
-
--- -----------------------------------------------------
 -- Table `smartpump`.`pump_cycle`
 -- -----------------------------------------------------
 DROP TABLE IF EXISTS `smartpump`.`pump_cycle` ;
@@ -41,14 +29,11 @@ CREATE TABLE IF NOT EXISTS `smartpump`.`pump_cycle` (
   `avg_gpm` SMALLINT NOT NULL,
   `total_gallons` MEDIUMINT NOT NULL,
   `total_pumping_time` TIME NOT NULL,
+  `valve_open_time` TIME NULL,
+  `valve_close_time` TIME NULL,
+  `prime_time` TIME NULL,
   `tide_tide_time` TIMESTAMP NOT NULL,
-  PRIMARY KEY (`idpump_cycles`),
-  INDEX `fk_pump_cycle_tide1_idx` (`tide_tide_time` ASC),
-  CONSTRAINT `fk_pump_cycle_tide1`
-    FOREIGN KEY (`tide_tide_time`)
-    REFERENCES `smartpump`.`tide` (`tide_time`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
+  PRIMARY KEY (`idpump_cycles`))
 ENGINE = InnoDB;
 
 
@@ -96,6 +81,18 @@ CREATE TABLE IF NOT EXISTS `smartpump`.`log` (
     ON UPDATE NO ACTION)
 ENGINE = InnoDB
 COMMENT = 'Used for logging all system messages.';
+
+
+-- -----------------------------------------------------
+-- Table `smartpump`.`tide`
+-- -----------------------------------------------------
+DROP TABLE IF EXISTS `smartpump`.`tide` ;
+
+CREATE TABLE IF NOT EXISTS `smartpump`.`tide` (
+  `tide_time` TIMESTAMP NOT NULL COMMENT 'MySQL converts TIMESTAMP values from the current time zone to UTC for storage, and back from UTC to the current time zone for retrieval. (This does not occur for other types such as DATETIME.) By default, the current time zone for each connection is the s' /* comment truncated */ /*erver's time. The time zone can be set on a per-connection basis. As long as the time zone setting remains constant, you get back the same value you store. If you store a TIMESTAMP value, and then change the time zone and retrieve the value, the retrieved value is different from the value you stored.*/,
+  `data_download_date` DATETIME NOT NULL,
+  PRIMARY KEY (`tide_time`))
+ENGINE = InnoDB;
 
 
 -- -----------------------------------------------------
