@@ -1,0 +1,11 @@
+[Unit]
+Description=DS3231 RTC Service
+
+[Service]
+Type=simple
+WorkingDirectory=/usr/share/rtc_ds3231
+ExecStart=/bin/bash clock_init.sh
+SyslogIdentifier=rtc_ds3231
+
+[Install]
+WantedBy=multi-user.target
