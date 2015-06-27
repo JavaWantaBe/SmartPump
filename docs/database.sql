@@ -1,8 +1,20 @@
+-- MySQL Workbench Forward Engineering
+
 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0;
 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0;
 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='TRADITIONAL,ALLOW_INVALID_DATES';
 
+-- -----------------------------------------------------
+-- Schema smartpump
+-- -----------------------------------------------------
+-- Database to hold all pump.
 DROP SCHEMA IF EXISTS `smartpump` ;
+
+-- -----------------------------------------------------
+-- Schema smartpump
+--
+-- Database to hold all pump.
+-- -----------------------------------------------------
 CREATE SCHEMA IF NOT EXISTS `smartpump` DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci ;
 USE `smartpump` ;
 
@@ -12,7 +24,7 @@ USE `smartpump` ;
 DROP TABLE IF EXISTS `smartpump`.`tide` ;
 
 CREATE TABLE IF NOT EXISTS `smartpump`.`tide` (
-  `tide_time` TIMESTAMP NOT NULL COMMENT 'MySQL converts TIMESTAMP values from the current time zone to UTC for storage, and back from UTC to the current time zone for retrieval. (This does not occur for other types such as DATETIME.) By default, the current time zone for each connection is the server\'s time. The time zone can be set on a per-connection basis. As long as the time zone setting remains constant, you get back the same value you store. If you store a TIMESTAMP value, and then change the time zone and retrieve the value, the retrieved value is different from the value you stored.',
+  `tide_time` TIMESTAMP NOT NULL COMMENT 'MySQL converts TIMESTAMP values from the current time zone to UTC for storage, and back from UTC to the current time zone for retrieval. (This does not occur for other types such as DATETIME.) By default, the current time zone for each connection is the s' /* comment truncated */ /*erver's time. The time zone can be set on a per-connection basis. As long as the time zone setting remains constant, you get back the same value you store. If you store a TIMESTAMP value, and then change the time zone and retrieve the value, the retrieved value is different from the value you stored.*/,
   `data_download_date` DATETIME NOT NULL,
   PRIMARY KEY (`tide_time`))
 ENGINE = InnoDB;
@@ -95,7 +107,7 @@ CREATE TABLE IF NOT EXISTS `smartpump`.`tSystem` (
   `system_start` DATETIME NOT NULL,
   `version` FLOAT NOT NULL)
 ENGINE = MEMORY
-COMMENT = 'Temporary variables and system info.  Used to minimize flash writes.';
+COMMENT = 'Temporary variables and system info.  Used to minimize flash' /* comment truncated */ /* writes.*/;
 
 USE `smartpump` ;
 
@@ -219,10 +231,6 @@ BEGIN
 END$$
 
 DELIMITER ;
-
-SET SQL_MODE=@OLD_SQL_MODE;
-SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
-SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
 USE `smartpump`;
 
 DELIMITER $$
@@ -250,3 +258,7 @@ FOR EACH ROW
 
 
 DELIMITER ;
+
+SET SQL_MODE=@OLD_SQL_MODE;
+SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
+SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
