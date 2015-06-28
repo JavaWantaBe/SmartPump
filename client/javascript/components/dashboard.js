@@ -1,10 +1,52 @@
-var React = require("react");
+var React = require("react" ),
+    AreaChart = require("react-d3").AreaChart;
+
 
 var Dashboard = React.createClass({
+
+    getInitialState: function() {
+        return {
+            areaData: []
+        }
+    },
+
+    componentWillMount: function() {
+        /*
+        d3.json( "data/stackedAreaData.json", function ( error, data ) {
+            this.setState( {areaData: data} );
+        }.bind( this ) );
+        */
+        console.log("componentWillMount called");
+    },
+
     render: function() {
+
+        var props = this.props;
+
+        var data = props.data;
+
         return (
             <div className='dashboard'>
-                TODO: add dashboard content
+                <AreaChart
+                    data={this.state.areaData}
+                    width="100%"
+                    viewBoxObject={{
+                        x: 0,
+                        y: 0,
+                        height: 500,
+                        width: 600
+                    }}
+                    height={500}
+                    title="Pumping History"
+                    xAxisTickInterval={{unit: 'Month', interval: 1}}
+                    xAxisLabel="Month"
+                    yAxisLabel="Volume"
+                    xAccessor={ (d) => {
+                            return new Date(d[0]);
+                        }
+                    }
+                    yAccessor={ (d) => d[1] }
+                />
             </div>
         );
     }
