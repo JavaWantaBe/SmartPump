@@ -12,6 +12,7 @@
  * @type {exports}
  */
 var logger = require("./logger")("index");
+var email = require("./emailalert");
 var webserver = require("./webserver");
 var configManager = require("./config-manager");
 var tideManager = require("./tide-manager");
@@ -45,6 +46,7 @@ status.init()
     .then(log("info", "Beagle bone status determined"))
     .then(db.connect)
     .then(log("info", "Successfully connected to mysql server"))
+    .then(email.init)
     .then(initializePumps)
     .then(log("info", "Sucessfully initialized pumps"))
     .then(webserver.init)
