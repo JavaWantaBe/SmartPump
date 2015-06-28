@@ -190,18 +190,8 @@ function cleanUp(outputPins) {
   _.invoke(outputPins, "turnOff"); // runs .turnOff() on all output pins
 }
 
-function startCycle() {
-  var deviceIO = getDeviceIO();
-  var pumps = deviceIO.pumps;
-  var outputPins = deviceIO.outputPins;
-  var inputPins = deviceIO.inputPins;
-  var pump;
-  // switch pumps on each cycle
-  currentPumpId = (currentPumpId === PUMP1 ? PUMP2 : PUMP1);
-  pump = pumps[currentPumpId];
-
-  return closeValves(pumps)
-    .then(runPrimeCycle.bind(null, outputPins.startPrime, inputPins.primeFinished))
+function pumpCycle(pump, outputPins, inputPins) {
+  return runPrimeCycle.bind(null, outputPins.startPrime, inputPins.primeFinished)
     .then(function() {
       console.log("Starting pump");
       return Q.resolve()
@@ -223,6 +213,35 @@ function startCycle() {
     .finally(cleanUp.bind(null, outputPins));
 }
 
+function cleanUpFailedPump(pump) {
+  return Q.resolve();
+}
+
+function startCycle(currentPumpId) {
+  var deviceIO = getDeviceIO();
+  var pumps = deviceIO.pumps;
+  var outputPins = deviceIO.outputPins;
+  var inputPins = deviceIO.inputPins;
+  var pump;
+  var backupPump;
+  // switch pumps on each cycle
+  pump = pumps[currentPumpId];
+  backupPump = (currentPumpId === PUMP1 ? pumps[PUMP2] : pumps[PUMP1]);
+
+  return closeValves(pumps, outputPins, inputPins)
+    .then(pumpCycle.bind(null, pump, inputPins, outputPins))
+    .catch(function() {
+      return cleanUpFailedPump(pump)
+        .then(pumpCycle.bind(null, backupPump, inputPins, outputPins))
+        .catch(function(error) {
+          return cleanUpFailedPump(backupPump).then(function() {
+            throw error;
+          });
+        });
+    });
+
+}
+
 
 module.exports = {
   init: function() {
@@ -241,5 +260,7 @@ module.exports = {
     return Q.resolve();
   },
 
-  startCycle: startCycle
+  startCycle: startCycle,
+  PUMP1: PUMP1,
+  PUMP2: PUMP2
 };

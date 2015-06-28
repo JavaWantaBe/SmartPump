@@ -1,33 +1,14 @@
-var React   = require("react"),
-    request = require("superagent"),
-    stores  = [
-        require("stores/log-store"),
-        require("stores/schedule-store"),
-        require("stores/settings-store")
-    ];
+var React = require("react");
+var hasher = require("hasher");
+var request = require("superagent");
 
 var Login = React.createClass({
-    mixins: [require("react-router").Navigation],
-
     getInitialState: function() {
         return {
             failed: false,
             username: "",
             password: ""
         };
-    },
-
-    preloadData: function() {
-        stores.forEach((store) => {
-            request.get(store.path, (response) => {
-                if(response.status === 200) {
-                    store.setData(JSON.parse(response.text));
-                }
-                else {
-                    console.error("Failed to fetch data from " + store.path);
-                }
-            });
-        });
     },
 
     submit: function(event) {
@@ -37,10 +18,8 @@ var Login = React.createClass({
             password: this.state.password
         }, (res) => {
             if(res.status === 200) { // Success
-                this.preloadData();
-                this.transitionTo("dashboard");
-            }
-            else {
+                hasher.setHash("dashboard");
+            } else {
                 this.setState({
                     failed: true,
                     username: "",

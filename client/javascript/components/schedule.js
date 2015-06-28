@@ -1,103 +1,105 @@
-var React   = require("react"),
-    request = require("superagent");
+var React = require("react");
+var _ = require("lodash");
+var hasher = require("hasher");
+var TideEntry = require("./tide-entry");
+var superagent = require("superagent");
 
-var Schedule = React.createClass({
-    mixins: [
-        require("react-router").Navigation,
-        require("mixins/store-listener")(require("stores/schedule-store"))
-    ],
+class Schedule extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = {
+            loaded: false
+        };
+    }
 
-    saveSchedule: function() {
-        this.save({
-            schedule: {
-                manualMode: this.state.schedule.manualMode,
-                entries: this.state.schedule.entries.map((entry) => 
-                    entry.date + " " + entry.time
-                )
-            }
-        });
-    },
-
-    toggleManualMode: function() {
-        if(this.state.schedule.manualMode) {
-            this.setState(this.getInitialState());
-        }
-        else {
-            this.state.schedule.manualMode = !this.state.schedule.manualMode;
-            this.setState(this.state);
-        }
-    },
-
-    startPumps: function() {
-        if(window.confirm("Are you sure you want to start the pumps?")) {
-            request.get("/start-pumps", function(response) {
-                if(response.status === 200) {
-                    alert("Pumps started");
+    load() {
+        superagent.get("/schedule")
+            .set('Accept', 'application/json')
+            .end((error, res) => {
+                if(error) {
+                    this.setState({loaded: true, error: error});
+                } else {
+                    console.log(res.status);
+                    if(res.status === 401) {
+                        console.log("Not authenticated");
+                        hasher.setHash("login");
+                    } else {
+                        const dates = res.body.schedule.dates.map((dateStr) => new Date(dateStr));
+                        this.setState({
+                            loaded: true,
+                            error: null,
+                            dates: dates,
+                            originalDates: dates,
+                            manualMode: res.body.schedule.manualMode
+                        });
+                    }
                 }
             });
-        }
-    },
+    }
 
-    removeEntry: function(entryToRemove) {
-        this.state.schedule.entries = this.state.schedule.entries.filter(function(entry) {
-            return entry !== entryToRemove;
+    save() {
+        console.log("Saving");
+        superagent.post("/schedule")
+            .set("Accept", "application/json")
+            .send({schedule: {
+                manualMode: this.state.manualMode,
+                dates: this.state.dates
+            }})
+            .end((error, res) => {
+                if(error) {
+                    console.log("Failed: " + error);
+                } else {
+                    console.log("Success:", res.body);
+                }
+            });
+    }
+
+    componentDidMount() {
+        this.load();
+    }
+
+    extendState(...sources) {
+        return this.setState(_.extend({}, this.state, ...sources));
+    }
+
+    toggleManualMode() {
+        const {manualMode, dates} = this.state;
+
+        this.extendState({
+            manualMode: !manualMode,
+            dates: manualMode ? this.state.originalDates : dates
         });
-        this.setState(this.state);
-    },
+    }
 
-    renderEntry: function(entry) {
-        return (
-            <div key={entry.key} className="schedule__entry">
-                <input
-                    type="date"
-                    value={entry.date}
-                    disabled={!this.state.schedule.manualMode}
-                    onChange={(event) => {
-                        entry.date = event.target.value;
-                        this.setState(this.state);
-                    }}/>
-                <input
-                    type="time" 
-                    value={entry.time}
-                    disabled={!this.state.schedule.manualMode}
-                    onChange={(event) => {
-                        entry.time = event.target.value
-                        this.setState(this.state);
-                    }}/>
-                {this.state.schedule.manualMode ?
-                    <button onClick={this.removeEntry.bind(this, entry)}>Remove</button> :
-                    null
+    updateDate(dateIndex, newDate) {
+        console.log(newDate, typeof newDate);
+        this.extendState({
+            dates: this.state.dates.map((date, index) => {
+                if(index === dateIndex) {
+                    return newDate;
+                } else {
+                    return date;
                 }
-            </div>
-        );
-    },
+            })
+        });
+    }
 
-    render: function() {
-        var manualMode = this.state.schedule.manualMode;
+    render() {
+        const {loaded, manualMode, dates} = this.state;
+        if(!loaded) return null;
+
         return (
-            <div className="schedule">
-                <input
-                    type="checkbox"
-                    checked={manualMode}
-                    onChange={this.toggleManualMode}/>
-                <label>Manual Mode</label>
-                {manualMode ? 
-                    <div>
-                        <br/>
-                        <button onClick={this.startPumps}>Start Pumping Cycle</button>
-                    </div> :
-                    null
-                }
-                <div className="schedule__entries">
-                    {this.state.schedule.entries.map(this.renderEntry)}
-                </div>
-                {manualMode ? 
-                    <button onClick={this.saveSchedule}>Save</button> :
-                    null
-                }
+            <div>
+                <p>Manual Mode</p>
+                <input type="checkbox" checked={manualMode} onChange={this.toggleManualMode.bind(this)}/>
+
+                <button onClick={this.save.bind(this)}>Save</button>
+                {dates.map((date, index) =>
+                    <TideEntry key={index} date={date} readOnly={!manualMode} onChange={this.updateDate.bind(this, index)}/>
+                )}
             </div>
         );
     }
-});
+}
 
 module.exports = Schedule;

@@ -1,5 +1,4 @@
-var React = require("react"),
-    Link = require("react-router").Link;
+var React = require("react");
 
 var Footer = React.createClass({
     render: function() {
@@ -8,10 +7,10 @@ var Footer = React.createClass({
                 <span className='copyright'>©2012 - 2014 AlphaLoewe.com - All Rights Reserved</span>
                 <div className='footer-nav'>
                     <ul>
-                        <li><Link to="logs" className='footer-nav-item'>Logs</Link></li>
-                        <li><Link to="settings" className='footer-nav-item'>Settings</Link></li>
-                        <li><Link to="schedule" className='footer-nav-item'>Tide Schedule</Link></li>
-                        <li><Link to="dashboard" className='footer-nav-item'>Dashboard</Link></li>
+                        <li><a href="#logs" className='footer-nav-item'>Logs</a></li>
+                        <li><a href="#settings" className='footer-nav-item'>Settings</a></li>
+                        <li><a href="#schedule" className='footer-nav-item'>Tide Schedule</a></li>
+                        <li><a href="#dashboard" className='footer-nav-item'>Dashboard</a></li>
                     </ul>
                 </div>
             </div>

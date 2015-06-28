@@ -106,7 +106,7 @@ function getSchedule() {
     return tideManager.getTideDates()
         .then(function(tideDates) {
             return {
-                entries: tideDates,
+                dates: tideDates,
                 manualMode: configManager.getConfig().manualMode
             };
         });
@@ -114,7 +114,7 @@ function getSchedule() {
 
 function setSchedule(schedule) {
     var manualMode = !!schedule.manualMode;
-    var entries = schedule.entries.map(function(dateString) {
+    var dates = schedule.dates.map(function(dateString) {
         return new Date(dateString);
     });
 
@@ -124,7 +124,7 @@ function setSchedule(schedule) {
         });
     }
 
-    return tideManager.setTideDates(entries).then(Q.resolve(entries));
+    return tideManager.setTideDates(dates).then(Q.resolve({dates: dates, manualMode: manualMode}));
 }
 
 // Schedule
@@ -139,7 +139,7 @@ app.route("/schedule")
             });
     })
     .post(checkAuthenticated, function(req, res) {
-        if(req.body && req.body.schedule && req.body.schedule.entries) {
+        if(req.body && req.body.schedule) {
             setSchedule(req.body.schedule)
                 .then(function(schedule) {
                     res.json({schedule: schedule});

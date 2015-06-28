@@ -9,6 +9,7 @@ var getTideDates = require("./queries/get-tide-dates");
 
 function saveTideDates(tideDates) {
   logger.info("Saving tide dates to MySQL server");
+  console.log("Dates: " + tideDates);
   return storeTideDates(tideDates)
     .then(function() {
       logger.info("Tide dates successfully saved to MySQL server");
@@ -54,6 +55,6 @@ module.exports = _.extend(new EventEmitter(), {
     return saveTideDates(tideDates)
       .then(function() {
         this.emit("change", tideDates);
-      });
+      }.bind(this));
   }
 });

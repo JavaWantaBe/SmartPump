@@ -41,7 +41,7 @@ function start() {
           currentJob = new Job(function() {
             logger.info("Starting pumps");
             if(isBeagleBone()) {
-              return pumps.startCycle().then(resolve, reject);
+              return pumps.startCycle(pumps.PUMP1).then(resolve, reject);
             } else { // for debugging without crashing
               logger.info("Not running on beaglebone. Skipping pumping cycle.");
               Q.delay(5000).then(resolve, reject);

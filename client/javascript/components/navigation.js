@@ -1,15 +1,14 @@
-var React = require("react"),
-    Link = require("react-router").Link;
+var React = require("react");
 
 var Navigation = React.createClass({
     render: function() {
         return (
             <div className='navigation'>
                 <ul>
-                    <li><Link to="dashboard" className='nav-item'>Dashboard</Link></li>
-                    <li><Link to="schedule" className='nav-item'>Tide Schedule</Link></li>
-                    <li><Link to="settings" className='nav-item'>Settings</Link></li>
-                    <li><Link to="logs" className='nav-item'>Logs</Link></li>
+                    <li><a href="#dashboard" className='nav-item'>Dashboard</a></li>
+                    <li><a href="#schedule" className='nav-item'>Tide Schedule</a></li>
+                    <li><a href="#settings" className='nav-item'>Settings</a></li>
+                    <li><a href="#logs" className='nav-item'>Logs</a></li>
                 </ul>
             </div>
         );
