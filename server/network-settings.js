@@ -11,7 +11,7 @@ var b = require("bonescript");
 var exec = Q.nfbind(require("child_process").exec);
 var writeFile = Q.nfbind(fs.writeFile);
 
-var _interfaceDir = path.normalize(__dirname + "/../interfaces");
+var _interfaceDir = "/etc/network/interfaces";
 var _scriptRead   = "awk -f " + __dirname + "/network-scripts/readInterfaces.awk " + _interfaceDir + " device=eth0";
 var _scriptWrite  = "awk -f " + __dirname + "/network-scripts/changeInterface.awk " + _interfaceDir + " device=eth0";
 
