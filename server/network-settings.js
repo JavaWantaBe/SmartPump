@@ -63,9 +63,10 @@ function setSettings(newSettings) {
 
 function writeSettings(newSettings) {
     return exec(_scriptWrite + 
-        " address=" + newSettings.ip.join(".") + 
+        " address=" + newSettings.ip.join(".") +
         " netmask=" + newSettings.subnet.join(".") +
-        " gateway=" + newSettings.gateway.join("."))
+        " gateway=" + newSettings.gateway.join(".") +
+        " mode=static")
     .then(function(result) {
         return writeFile(_interfaceDir, result.toString());
     });

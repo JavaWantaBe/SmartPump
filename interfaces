@@ -9,8 +9,16 @@ iface lo inet loopback
 auto eth0
 
 iface eth0 inet static
-    address  185.168.1.45
-    netmask  255.255.255.0
-    gateway  192.168.1.1
+    address  1.1.1.10
+    netmask  3.3.3.3
+    gateway  2.2.2.2
 
+,
+,
+,
+,
+,
+,
+,
+,
 ,

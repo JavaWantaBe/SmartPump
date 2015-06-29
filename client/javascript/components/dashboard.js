@@ -1,6 +1,6 @@
-var React = require("react");
+const React = require("react");
 
-var Dashboard = React.createClass({
+const Dashboard = React.createClass({
     render: function() {
         return (
             <div className='dashboard'>

@@ -8,6 +8,7 @@ class Schedule extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
+            dates: [],
             loaded: false
         };
     }
@@ -19,9 +20,7 @@ class Schedule extends React.Component {
                 if(error) {
                     this.setState({loaded: true, error: error});
                 } else {
-                    console.log(res.status);
                     if(res.status === 401) {
-                        console.log("Not authenticated");
                         hasher.setHash("login");
                     } else {
                         const dates = res.body.schedule.dates.map((dateStr) => new Date(dateStr));
@@ -38,18 +37,17 @@ class Schedule extends React.Component {
     }
 
     save() {
-        console.log("Saving");
         superagent.post("/schedule")
             .set("Accept", "application/json")
             .send({schedule: {
                 manualMode: this.state.manualMode,
-                dates: this.state.dates
+                dates: this.state.dates.map((date) => date.toISOString())
             }})
             .end((error, res) => {
                 if(error) {
-                    console.log("Failed: " + error);
+                    alert("Failed to save: " + error.message);
                 } else {
-                    console.log("Success:", res.body);
+                    alert("Saved successfully");
                 }
             });
     }
@@ -72,7 +70,6 @@ class Schedule extends React.Component {
     }
 
     updateDate(dateIndex, newDate) {
-        console.log(newDate, typeof newDate);
         this.extendState({
             dates: this.state.dates.map((date, index) => {
                 if(index === dateIndex) {
@@ -84,19 +81,48 @@ class Schedule extends React.Component {
         });
     }
 
+    removeDate(index) {
+        this.extendState({
+            dates: this.state.dates.filter((date, i) => i !== index)
+        });
+    }
+
+    areDatesValid() {
+        const now = new Date();
+        return this.state.dates.every((date) => date > now);
+    }
+
+    addDate() {
+        this.extendState({
+            dates: this.state.dates.concat(new Date())
+        });
+    }
+
     render() {
         const {loaded, manualMode, dates} = this.state;
+        const datesAreValid = this.areDatesValid();
         if(!loaded) return null;
 
         return (
             <div>
+                {datesAreValid || !manualMode ? null : 
+                    <p style={{fontWeight: "bold", color: "rgb(125, 0, 0)"}}>All dates must be after the current date</p>
+                }
                 <p>Manual Mode</p>
                 <input type="checkbox" checked={manualMode} onChange={this.toggleManualMode.bind(this)}/>
-
-                <button onClick={this.save.bind(this)}>Save</button>
-                {dates.map((date, index) =>
-                    <TideEntry key={index} date={date} readOnly={!manualMode} onChange={this.updateDate.bind(this, index)}/>
-                )}
+                <br/>
+                <div style={{maxHeight: 500, overflow: "auto", margin: "10px 0 10px 0", border: "1px solid #ddd"}}>
+                    {dates.map((date, index) =>
+                        <TideEntry
+                            key={index}
+                            date={date}
+                            readOnly={!manualMode}
+                            onChange={this.updateDate.bind(this, index)}
+                            onRemoveClick={this.removeDate.bind(this, index)}/>
+                    )}
+                    <button onClick={this.addDate.bind(this)}>Add</button>
+                </div>
+                <button onClick={this.save.bind(this)} disabled={!datesAreValid} style={{marginBottom: 10}}>Save</button>
             </div>
         );
     }
