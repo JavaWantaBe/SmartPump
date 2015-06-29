@@ -21,10 +21,6 @@ var Dashboard = React.createClass({
 
     render: function() {
 
-        var props = this.props;
-
-        var data = props.data;
-
         return (
             <div className='dashboard'>
                 <AreaChart
