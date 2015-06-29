@@ -51,7 +51,7 @@ function getSettings() {
     // TODO: Richard retrieve actual network info
     return network.getSettings()
         .then(function(netSettings) {
-            return _.extend({}, netSettings, configManager.getConfig().pumpTimeouts);
+            return _.extend({}, netSettings, {timeouts: configManager.getConfig().pumpTimeouts});
         });
 }
 
@@ -62,16 +62,9 @@ function setSettings(settings) {
         gateway: settings.gateway
     };
 
-    var pumpTimeouts = {
-        primeTimeOut: settings.primeTimeOut,
-        outletTimeOut: settings.outletTimeOut,
-        pumpingTimeOut: settings.pumpingTimeOut,
-        generalTimeOut: settings.generalTimeOut
-    };
-
-    return network.setSettings(networkSettings).then(function() {    
+    return network.setSettings(networkSettings).then(function() {
         configManager.merge({
-            pumpTimeouts: pumpTimeouts 
+            pumpTimeouts: settings.timeouts 
         });
         return settings;
     });
@@ -91,6 +84,7 @@ app.route("/settings")
     })
     .post(checkAuthenticated, function(req, res) {
         logger.info("User submitted new configuration:", req.body.settings);
+        console.log("GOT ", req.body);
         Q.resolve()
             .then(setSettings.bind(null, req.body.settings))
             .then(function(settings) {
@@ -106,7 +100,9 @@ function getSchedule() {
     return tideManager.getTideDates()
         .then(function(tideDates) {
             return {
-                entries: tideDates,
+                dates: tideDates.map(function(date) {
+                    return date.toISOString();
+                }),
                 manualMode: configManager.getConfig().manualMode
             };
         });
@@ -114,7 +110,7 @@ function getSchedule() {
 
 function setSchedule(schedule) {
     var manualMode = !!schedule.manualMode;
-    var entries = schedule.entries.map(function(dateString) {
+    var dates = schedule.dates.map(function(dateString) {
         return new Date(dateString);
     });
 
@@ -124,7 +120,7 @@ function setSchedule(schedule) {
         });
     }
 
-    return tideManager.setTideDates(entries).then(Q.resolve(entries));
+    return tideManager.setTideDates(dates).then(Q.resolve({dates: dates, manualMode: manualMode}));
 }
 
 // Schedule
@@ -139,7 +135,8 @@ app.route("/schedule")
             });
     })
     .post(checkAuthenticated, function(req, res) {
-        if(req.body && req.body.schedule && req.body.schedule.entries) {
+        if(req.body && req.body.schedule) {
+            console.log("Got dates: " + req.body.schedule.dates);
             setSchedule(req.body.schedule)
                 .then(function(schedule) {
                     res.json({schedule: schedule});
@@ -169,6 +166,21 @@ app.route("/login")
     .post(passport.authenticate("local-login"), 
     function(req, res) {
         res.status(200).end(); // success
+    });
+
+app.route("/logout")
+    .post(function(req, res) {
+        console.log("Logging user out");
+        req.logout();
+        req.session.destroy();
+        res.status(200).end();
+    });
+
+app.route("/is-authenticated")
+    .get(function(req, res) {
+        res.status(200).json({
+            isAuthenticated: req.isAuthenticated()
+        });
     });
 
 passport.serializeUser(function(user, done) {

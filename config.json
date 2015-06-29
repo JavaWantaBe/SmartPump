@@ -1,114 +1,114 @@
 {
-  "database": {
-    "host": "127.0.0.1",
-    "port": "3306",
-    "database": "smartpump",
-    "table": "log",
-    "user": "smartpump",
-    "password": "foobar123",
-    "dateStrings": "false"
-  },
-  "pins": {
-    "outputs": {
-        "startPump1": {
-          "pin": "P9_12",
-          "onValue": "HIGH",
-          "offValue": "LOW"
+    "database": {
+        "host": "127.0.0.1",
+        "port": "3306",
+        "database": "smartpump",
+        "table": "log",
+        "user": "smartpump",
+        "password": "foobar123",
+        "dateStrings": "false"
+    },
+    "pins": {
+        "outputs": {
+            "startPump1": {
+                "pin": "P9_12",
+                "onValue": "HIGH",
+                "offValue": "LOW"
+            },
+            "startPump2": {
+                "pin": "P9_27",
+                "onValue": "HIGH",
+                "offValue": "LOW"
+            },
+            "openValve1": {
+                "pin": "P9_15",
+                "onValue": "HIGH",
+                "offValue": "LOW"
+            },
+            "closeValve1": {
+                "pin": "P9_23",
+                "onValue": "HIGH",
+                "offValue": "LOW"
+            },
+            "openValve2": {
+                "pin": "P8_7",
+                "onValue": "HIGH",
+                "offValue": "LOW"
+            },
+            "closeValve2": {
+                "pin": "P9_41",
+                "onValue": "HIGH",
+                "offValue": "LOW"
+            },
+            "startPrime": {
+                "pin": "P8_9",
+                "onValue": "HIGH",
+                "offValue": "LOW"
+            }
         },
-        "startPump2": {
-          "pin": "P9_27",
-          "onValue": "HIGH",
-          "offValue": "LOW"
-        },
-        "openValve1": {
-          "pin": "P9_15",
-          "onValue": "HIGH",
-          "offValue": "LOW"
-        },
-        "closeValve1": {
-          "pin": "P9_23",
-          "onValue": "HIGH",
-          "offValue": "LOW"
-        },
-        "openValve2": {
-          "pin": "P8_7",
-          "onValue": "HIGH",
-          "offValue": "LOW"
-        },
-        "closeValve2": {
-          "pin": "P9_41",
-          "onValue": "HIGH",
-          "offValue": "LOW"
-        },
-        "startPrime": {
-          "pin": "P8_9",
-          "onValue": "HIGH",
-          "offValue": "LOW"
+        "inputs": {
+            "emergencyStop": {
+                "pin": "P8_15",
+                "handler": "HIGH",
+                "mode": "RISING"
+            },
+            "pressure": {
+                "pin": "P8_11",
+                "handler": "HIGH",
+                "mode": "RISING"
+            },
+            "primeFinished": {
+                "pin": "P8_14",
+                "handler": "LOW",
+                "mode": "FALLING"
+            },
+            "tankIsFull": {
+                "pin": "P8_12",
+                "handler": "HIGH",
+                "mode": "RISING"
+            },
+            "valve1Opened": {
+                "pin": "P8_16",
+                "handler": "LOW",
+                "mode": "FALLING"
+            },
+            "valve1Closed": {
+                "pin": "P8_17",
+                "handler": "LOW",
+                "mode": "FALLING"
+            },
+            "valve2Opened": {
+                "pin": "P8_18",
+                "handler": "LOW",
+                "mode": "FALLING"
+            },
+            "valve2Closed": {
+                "pin": "P8_26",
+                "handler": "LOW",
+                "mode": "FALLING"
+            }
         }
     },
-    "inputs": {
-      "emergencyStop": {
-        "pin": "P8_15",
-        "handler": "HIGH",
-        "mode": "RISING"
-      },
-      "pressure": {
-        "pin": "P8_11",
-        "handler": "HIGH",
-        "mode": "RISING"
-      },
-      "primeFinished": {
-        "pin": "P8_14",
-        "handler": "LOW",
-        "mode": "FALLING"
-      },
-      "tankIsFull": {
-        "pin": "P8_12",
-        "handler": "HIGH",
-        "mode": "RISING"
-      },
-      "valve1Opened": {
-        "pin": "P8_16",
-        "handler": "LOW",
-        "mode": "FALLING"
-      },
-      "valve1Closed": {
-        "pin": "P8_17",
-        "handler": "LOW",
-        "mode": "FALLING"
-      },
-      "valve2Opened": {
-        "pin": "P8_18",
-        "handler": "LOW",
-        "mode": "FALLING"
-      },
-      "valve2Closed": {
-        "pin": "P8_26",
-        "handler": "LOW",
-        "mode": "FALLING"
-      }
-    }
-  },
-  "pumpTimeouts": {
-    "primeTimeOut": 70025,
-    "outletTimeOut": 16000,
-    "pumpingTimeOut": 200008,
-    "generalTimeOut": 4996,
-    "valveTimeOut": 15000,
-    "finishTimeOut": 300000,
-    "pressureTimeOut": 30000
-  },
-  "NOAARequest": {
-    "service": "SOS",
-    "request": "GetObservation",
-    "version": "1.0.0",
-    "observedProperty": "sea_surface_height_amplitude_due_to_equilibrium_ocean_tide",
-    "offering": "urn:ioos:station:NOAA.NOS.CO-OPS:9432780",
-    "responseFormat": "text%2Fcsv",
-    "eventTime": null,
-    "result": "VerticalDatum%3D%3Durn:ioos:def:datum:noaa::MLLW",
-    "dataType": "HighLowTidePredictions",
-    "unit": "Meters"
-  },
-  "manualMode": false 
+    "pumpTimeouts": {
+        "primeTimeOut": 70025,
+        "outletTimeOut": 16000,
+        "pumpingTimeOut": 200008,
+        "generalTimeOut": 4996,
+        "valveTimeOut": 15000,
+        "finishTimeOut": 300000,
+        "pressureTimeOut": 30000
+    },
+    "NOAARequest": {
+        "service": "SOS",
+        "request": "GetObservation",
+        "version": "1.0.0",
+        "observedProperty": "sea_surface_height_amplitude_due_to_equilibrium_ocean_tide",
+        "offering": "urn:ioos:station:NOAA.NOS.CO-OPS:9432780",
+        "responseFormat": "text%2Fcsv",
+        "eventTime": null,
+        "result": "VerticalDatum%3D%3Durn:ioos:def:datum:noaa::MLLW",
+        "dataType": "HighLowTidePredictions",
+        "unit": "Meters"
+    },
+    "manualMode": true
 }

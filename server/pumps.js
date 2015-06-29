@@ -238,11 +238,11 @@ function startCycle(currentPumpId) {
   // switch pumps on each cycle
   pump = pumps[currentPumpId];
   backupPump = (currentPumpId === PUMP1 ? pumps[PUMP2] : pumps[PUMP1]);
-  
+
   var resultObject = {
     pump_used: currentPumpId === PUMP1 ? "pump1" : "pump2"
   };
-  console.log("Starting pump cycle with " + resultObject.pump_used);
+  logger.info("Starting pump cycle with " + resultObject.pump_used);
 
   return closeValves(pumps) // close valves, on error, do not try with other pump
     .then(function() {
@@ -261,6 +261,7 @@ function startCycle(currentPumpId) {
         .then(cleanUp.bind(null, outputPins));
     });
 }
+
 
 module.exports = {
   init: function() {
@@ -281,5 +282,7 @@ module.exports = {
     return Q.all(pinModePromises);
   },
 
-  startCycle: startCycle
+  startCycle: startCycle,
+  PUMP1: PUMP1,
+  PUMP2: PUMP2
 };

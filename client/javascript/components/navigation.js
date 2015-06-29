@@ -1,19 +1,21 @@
-var React = require("react"),
-    Link = require("react-router").Link;
+const React = require("react");
+const Link = require("./link");
+const LogoutLink = require("./logout-link");
 
-var Navigation = React.createClass({
-    render: function() {
-        return (
-            <div className='navigation'>
-                <ul>
-                    <li><Link to="dashboard" className='nav-item'>Dashboard</Link></li>
-                    <li><Link to="schedule" className='nav-item'>Tide Schedule</Link></li>
-                    <li><Link to="settings" className='nav-item'>Settings</Link></li>
-                    <li><Link to="logs" className='nav-item'>Logs</Link></li>
-                </ul>
-            </div>
-        );
-    }
-});
+class Navigation extends React.Component {
+  render() {
+    return (
+      <div className="navigation">
+        <ul>
+          <li><Link href="#dashboard" className="nav-item" activeClassName="active" hash={this.props.hash}>Dashboard</Link></li>
+          <li><Link href="#schedule" className="nav-item" activeClassName="active" hash={this.props.hash}>Tide Schedule</Link></li>
+          <li><Link href="#settings" className="nav-item" activeClassName="active" hash={this.props.hash}>Settings</Link></li>
+          <li><Link href="#logs" className="nav-item" activeClassName="active" hash={this.props.hash}>Logs</Link></li>
+          <li><LogoutLink onLogout={this.props.onLogout} style={{position: "relative", left: 10}}/></li>
+        </ul>
+      </div>
+    );
+  }
+}
 
 module.exports = Navigation;

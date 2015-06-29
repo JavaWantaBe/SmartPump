@@ -1,33 +1,14 @@
-var React   = require("react"),
-    request = require("superagent"),
-    stores  = [
-        require("stores/log-store"),
-        require("stores/schedule-store"),
-        require("stores/settings-store")
-    ];
+var React = require("react");
+var hasher = require("hasher");
+var request = require("superagent");
 
 var Login = React.createClass({
-    mixins: [require("react-router").Navigation],
-
     getInitialState: function() {
         return {
             failed: false,
             username: "",
             password: ""
         };
-    },
-
-    preloadData: function() {
-        stores.forEach((store) => {
-            request.get(store.path, (response) => {
-                if(response.status === 200) {
-                    store.setData(JSON.parse(response.text));
-                }
-                else {
-                    console.error("Failed to fetch data from " + store.path);
-                }
-            });
-        });
     },
 
     submit: function(event) {
@@ -37,10 +18,8 @@ var Login = React.createClass({
             password: this.state.password
         }, (res) => {
             if(res.status === 200) { // Success
-                this.preloadData();
-                this.transitionTo("dashboard");
-            }
-            else {
+                this.props.onLogin();
+            } else {
                 this.setState({
                     failed: true,
                     username: "",
@@ -69,22 +48,33 @@ var Login = React.createClass({
     },
 
     render: function() {
+        const inputStyle = {
+            display: "inline-block",
+            marginBottom: 10
+        };
         return (
             <div className='login'>
                 {this.state.failed ? 
                     <p>Invalid username or password</p> :
                     null
                 }
-                <form onSubmit={this.submit}>
-                    <input
+                <form onSubmit={this.submit} style={{textAlign: "center"}}>
+                    Username<br/> <input
                         type="text"
                         placeholder="username"
                         maxLength="16"
                         value={this.state.username}
                         onChange={this.updateUsername}
-                        ref="usernameInput"/>
+                        ref="usernameInput"
+                        style={inputStyle}/>
                     <br/>
-                    <input type="password" placeholder="password" maxLength="32" value={this.state.password} onChange={this.updatePassword}/>
+                    Password<br/> <input
+                        type="password"
+                        placeholder="password"
+                        maxLength="32"
+                        value={this.state.password}
+                        onChange={this.updatePassword}
+                        style={inputStyle}/>
                     <br/>
                     <button>Login</button>
                 </form>
@@ -92,5 +82,9 @@ var Login = React.createClass({
         );
     }
 });
+
+Login.defaultProps = {
+    onLogin() {}
+};
 
 module.exports = Login;
