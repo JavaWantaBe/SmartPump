@@ -1,12 +1,24 @@
 const React = require("react");
 const Link = require("./link");
 
+/**
+ * @brief Returns full date for footer copyright date
+ * @returns {number}
+ */
+function getYear(){
+    var d = new Date();
+    return d.getFullYear();
+}
+
+/**
+ * @brief Creates class component that is used to render Footer
+ */
 const Footer = React.createClass({
     render: function() {
         const {hash} = this.props;
         return (
             <div className='footer'>
-                <span className='copyright'>©2012 - 2014 AlphaLoewe.com - All Rights Reserved</span>
+                <span className='copyright'>©2012 - {getYear()} AlphaLoewe.com - All Rights Reserved</span>
                 <div className='footer-nav'>
                     <ul>
                         <li><Link href="#logs" className="footer-nav-item" activeClassName="active" hash={hash}>Logs</Link></li>

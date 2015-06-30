@@ -12,6 +12,8 @@ var LocalStrategy = require("passport-local").Strategy;
 
 var getUser       = require("./queries/get-user");
 var getLogs       = require("./queries/get-logs");
+var getpumpdata   = require("./queries/get-pumping-data");
+var nextTide      = require("./queries/get-next-tide-date");
 var network       = require("./network-settings");
 var configManager = require("./config-manager");
 var tideManager   = require("./tide-manager");
