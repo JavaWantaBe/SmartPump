@@ -9,3 +9,4 @@ SyslogIdentifier=rtc_ds3231
 
 [Install]
 WantedBy=multi-user.target
+

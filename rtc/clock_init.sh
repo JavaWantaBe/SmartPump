@@ -1,26 +1,28 @@
 #!/bin/bash
-sleep 15
-a=$(date +%Y)
-
-if [[ $a < 2013 ]]; then
-	
-	echo ds3231 0x68 > /sys/class/i2c-adapter/i2c-2/new_device
-	echo "Retrieving time from rtc"
-	hwclock -s -f /dev/rtc1
-	hwclock -w
-
-	echo "Date has been read from RTC, and copied to system clock"
+if [ -e /dev/rtc1 ]; then
+  echo "Found existing RTC1"
 else
-   # Assumes if date is correct on reboot, that you are connected to network
-   echo "Fetching time from ntp server"
-   $(/usr/bin/ntpdate -b -s u pool.ntp.org)  
+  if [ -e /dev/i2c-2 ]; then
+    echo ds3231 0x68 > /sys/class/i2c-adapter/i2c-2/new_device
+  fi
+fi
 
-   if [ -e /dev/rtc1 ]; then
-     echo "Writing system clock to RTC"
-     hwclock -w -f /dev/rtc1
-   else
-    echo ds1307 0x68 > /sys/class/i2c-adapter/i2c-2/new_device
-     echo "Writing system clock to RTC"
-     hwclock -w -f /dev/rtc1
-   fi
+sleep 2
+
+if [ -e /dev/rtc1 ]; then
+  echo "Found RTC1, Reading from it now"
+  hwclock -s -f /dev/rtc1
+  echo "Writing to System Clock"
+  hwclock -w
+  echo "Writing to RTC0"
+  hwclock -w -f /dev/rtc0
+fi
+
+# Assumes if date is correct on reboot, that you are connected to network
+echo "Fetching time from ntp server"
+$(/usr/sbin/ntpdate -b -u -s pool.ntp.org)
+
+if [ -e /dev/rtc1 ]; then
+  echo "Writing system clock to RTC"
+  hwclock -w -f /dev/rtc1
 fi
