@@ -100,9 +100,7 @@ function stop() {
     logger.info("Cancelling currently scheduled pump job");
     currentJob.cancel();
     currentJob = null;
-
   }
-
 }
 
 module.exports = {

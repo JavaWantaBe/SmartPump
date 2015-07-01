@@ -50,7 +50,6 @@ function validateUser(username, password) {
 }
 
 function getSettings() {
-    // TODO: Richard retrieve actual network info
     return network.getSettings()
         .then(function(netSettings) {
             return _.extend({}, netSettings, {timeouts: configManager.getConfig().pumpTimeouts});

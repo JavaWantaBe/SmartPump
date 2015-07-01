@@ -103,7 +103,7 @@ function get_gw() {
  * @retval false - DHCP mode off, static assignment
  */
 function get_dhcp() {
-
+    //TODO: DHCP Read Does Not Work.
     var exec = require('child_process').exec;
     var mode;
     return exec(_scriptRead,
@@ -119,8 +119,6 @@ function get_dhcp() {
                 }
             }
         });
-
-    return mode;
 }
 
 /**

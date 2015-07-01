@@ -189,7 +189,7 @@ function monitorFlow(pump, tankIsFull, pressure) {
       pressure.once(function() {
         console.log("pressure signal received");
         cleanupMonitorFlow();
-        reject(new Error("Low pressure")); // TODO: Figure out what goes here
+        reject(new Error("Low pressure"));
       });
     }),
 
