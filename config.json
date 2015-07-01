@@ -1,4 +1,59 @@
 {
+    "email": {
+        "settings": {
+            "servicessupported": [
+                "service",
+                "smtp"
+            ],
+            "servicesetting": "service",
+            "serviceselected": "Gmail",
+            "services": [
+                "1und1",
+                "AOL",
+                "DynectEmail",
+                "FastMail",
+                "GandiMail",
+                "Gmail",
+                "Godaddy",
+                "GodaddyAsia",
+                "GodaddyEurope",
+                "hot.ee",
+                "Hotmail",
+                "iCloud",
+                "mail.ee",
+                "Mail.ru",
+                "Mailgun",
+                "Mailjet",
+                "Mandrill",
+                "Naver",
+                "Postmark",
+                "QQ",
+                "QQex",
+                "SendCloud",
+                "SendGrid",
+                "SES",
+                "Yahoo",
+                "Yandex",
+                "Zoho",
+                "User Defined"]
+        },
+        "server": {
+            "host": "smtp.gmail.com",
+            "port": 525,
+            "secure": true,
+            "auth": {
+                "user": "ocdrichard@gmail.com",
+                "pass": "HappyTester"
+            }
+        },
+        "client":{
+            "from": "ocdrichard@gmail.com",
+            "to": "ocdrichard@gmail.com",
+            "subject": "SmartPump Alert",
+            "text": " "
+        }
+
+    },
     "database": {
         "host": "127.0.0.1",
         "port": "3306",
