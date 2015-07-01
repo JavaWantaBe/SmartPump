@@ -125,6 +125,15 @@ function setSchedule(schedule) {
     return tideManager.setTideDates(dates).then(Q.resolve({dates: dates, manualMode: manualMode}));
 }
 
+app.route("/dashboard")
+    .get(checkAuthenticated, function(req, res){
+       getpumpdata().then(function(pumpdata){
+           res.json(pumpdata);
+       }, function(error){
+           logger.warn("Unable to retrieve data");
+       })
+    });
+
 // Schedule
 app.route("/schedule")
     .get(checkAuthenticated, function(req, res) {
@@ -133,18 +142,17 @@ app.route("/schedule")
                 res.json({schedule: schedule});
             })
             .catch(function(error) {
-                console.log("getSchedule failed: " + error);
+                logger.debug("getSchedule failed: " + error);
             });
     })
     .post(checkAuthenticated, function(req, res) {
         if(req.body && req.body.schedule) {
-            console.log("Got dates: " + req.body.schedule.dates);
             setSchedule(req.body.schedule)
                 .then(function(schedule) {
                     res.json({schedule: schedule});
                 })
                 .catch(function(error) {
-                    console.log("setSchedule failed: " + error);
+                    logger.debug("setSchedule failed: " + error);
                 });
         }
     });

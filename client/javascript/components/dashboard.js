@@ -1,5 +1,11 @@
 const React = require("react" ),
-      AreaChart = require("react-d3").AreaChart;
+      AreaChart = require("react-d3").AreaChart,
+      agent = require("superagent");
+
+function formateData( data ) {
+    return data;
+}
+
 
 const Dashboard = React.createClass({
 
@@ -16,6 +22,14 @@ const Dashboard = React.createClass({
          }.bind( this ) );
          */
         console.log("componentWillMount called");
+    },
+
+    componentDidMount: function() {
+        agent.get("/dashboard").end((error, res) => {
+            this.setState({
+                areaData: formateData(res.body)
+            });
+        });
     },
 
     render: function() {
