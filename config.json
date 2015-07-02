@@ -71,22 +71,22 @@
                 "offValue": "LOW"
             },
             "startPump2": {
-                "pin": "P9_27",
-                "onValue": "HIGH",
-                "offValue": "LOW"
-            },
-            "openValve1": {
                 "pin": "P9_15",
                 "onValue": "HIGH",
                 "offValue": "LOW"
             },
-            "closeValve1": {
+            "openValve1": {
                 "pin": "P9_23",
                 "onValue": "HIGH",
                 "offValue": "LOW"
             },
+            "closeValve1": {
+                "pin": "P8_9",
+                "onValue": "HIGH",
+                "offValue": "LOW"
+            },
             "openValve2": {
-                "pin": "P8_7",
+                "pin": "P9_27",
                 "onValue": "HIGH",
                 "offValue": "LOW"
             },
@@ -96,7 +96,7 @@
                 "offValue": "LOW"
             },
             "startPrime": {
-                "pin": "P8_9",
+                "pin": "P8_7",
                 "onValue": "HIGH",
                 "offValue": "LOW"
             }
